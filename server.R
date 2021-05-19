@@ -12,9 +12,8 @@ function(input, output){
     library(kableExtra)
     library(ggrepel)
     library(stringr)
-    #library(patchwork)
-    library(grid)
-    library(cowplot)
+    library(knitr)
+    library(DT)
     
     shade.alpha <- 0.3
     shade.fill <- "lightgrey"
@@ -128,7 +127,7 @@ function(input, output){
                         !Value == "NA")
         
       # Heatwave Cumulative Intensity #####################################  
-      } else if (input$Indicator == "Heatwave_Cumulative_Intesity"){
+      } else if (input$Indicator == "Heatwave_Cumulative_Intensity"){
         ind<- ecodata::heatwave %>% 
           dplyr::filter(Var == "cumulative intensity", 
                         EPU == input$epu_abbr) %>% 
@@ -137,7 +136,7 @@ function(input, output){
           dplyr::ungroup() 
         
       # Heatwave Maximum Intensity #####################################  
-      } else if (input$Indicator == "Heatwave_Maximum_Intesity"){
+      } else if (input$Indicator == "Heatwave_Maximum_Intensity"){
         ind<- ecodata::heatwave %>% 
           dplyr::filter(Var == "maximum intensity", 
                         EPU == input$epu_abbr)  %>% 
@@ -152,31 +151,19 @@ function(input, output){
       } else {
       ind <- message("No Data")
       }
-
-    if (input$Model == "SOE_Standard") {
-    p1<- ind %>% 
-
-      ggplot2::ggplot()+
-      ecodata::geom_gls(aes(x = Time, y = Value))+
-      ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
-      ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-      ggplot2::ylab(("Value")) +
-      ggplot2::xlab(element_blank())+
-      ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
-      ggplot2::theme(axis.title.y = element_text(size = 7))+
-      ecodata::theme_ts()+
-      ecodata::theme_title()
-    
-    p1
-    } else if (input$Model == "GAM"){
+   
       
         gam_norm<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) # calc gam
-        ind2<- data.frame(pred = predict(gam_norm)) %>% # get predicted column
-          mutate(Time = c(min(ind$Time):max(ind$Time))) %>% #add time to predicted
-          left_join(ind) #join with original data
-        #ind2<-gam_norm$model %>% 
-        #  dplyr::rename(pred = "Value") %>% 
-        #  left_join(ind)
+        
+        new.dat<-data.frame(Time = ind$Time, # newdata
+                          Value = ind$Value) 
+        
+        ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE )) %>% # calc predicted values
+          dplyr::mutate(Time = ind$Time) %>% 
+          left_join(ind) %>% # join with orig data set
+          dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
+                        lower = pred.fit - pred.se.fit)
+        
         ### Add derivative calculation!!!!!!!!!!!!!!!!!!! and plotting prep 
         
         p2 <- ind2 %>% 
@@ -184,7 +171,8 @@ function(input, output){
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
           ecodata::geom_gls(aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-          ggplot2::geom_line(aes(x = Time, y = pred), size = lwd+1, color = "gray")+
+          ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+1, color = "gray")+
+          ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
           ggplot2::ylab(("Value")) +
           ggplot2::xlab(element_blank())+
           ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
@@ -192,18 +180,27 @@ function(input, output){
           ecodata::theme_ts()+
           ecodata::theme_title()
         p2
-        
-        
-    } 
-  }) 
-  
-  output$modelSummary<-renderPrint({
-    if (input$Model == "GAM") {
-      gam_norm2<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) 
-      AICcmodavg::AICc(gam_norm2)
-    } else { print("No model: Change model to GAM for value.")}
+
   })
   
+  output$modelSummary<-renderPrint({
+      gam_norm2<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) 
+      AICcmodavg::AICc(gam_norm2)
+  })
+  output$table <- renderDataTable({ind2})
+  
+  output$download <- downloadHandler(
+    filename = function(){paste0(input$Indicator, "-", 
+                                 input$epu_abbr, "-knots", 
+                                 input$knots,".csv")}, 
+    content = function(fname){
+      write.csv(ind2, fname)
+    }
+  )
+
+  output$markdown <- renderUI({
+    HTML(markdown::markdownToHTML(knit('documentation.rmd', quiet = TRUE)))
+  })
 }
   
   

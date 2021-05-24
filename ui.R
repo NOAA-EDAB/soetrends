@@ -2,8 +2,6 @@ shinyUI(
   fluidPage(
   titlePanel("State of the Ecosystem Time Series Analysis"),
 
-  navbarPage("State of the Ecosystem Time Series Analysis",
-  tabPanel("Analysis"),
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
     # Sidebar panel for inputs ----
@@ -55,17 +53,14 @@ shinyUI(
 
       # Output: Histogram ----
       tabPanel("Plot/Summary", 
-               plotOutput(outputId = "timeseries"),
-               h3("AIC"),
-               verbatimTextOutput(outputId = "modelSummary"), 
-               h3("Table"),
-               tableOutput("table")), 
+               plotOutput(outputId = "timeseries")),
+      tabPanel("Table",
+               tableOutput("tableout")), 
       tabPanel("Documentation",
                htmlOutput("markdown"))
 
     )
     )
-  )
   )
   )
 )

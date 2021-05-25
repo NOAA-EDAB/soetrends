@@ -43,8 +43,8 @@ shinyUI(
                   min = 0,
                   max = 10,
                   value = 1,
-                  step = 0.01), 
-      downloadButton('download',"Download the data")
+                  step = 0.01)#, 
+     # downloadButton('download',"Download the data")
     ),
 
     # Main panel for displaying outputs ----
@@ -55,7 +55,8 @@ shinyUI(
       tabPanel("Plot/Summary", 
                plotOutput(outputId = "timeseries")),
       tabPanel("Table",
-               tableOutput("tableout")), 
+               DT::dataTableOutput("tableout"), 
+               fluidRow(downloadButton('SampleDownload', "Download sample data"))), # in a tabitem)), 
       tabPanel("Documentation",
                htmlOutput("markdown"))
 

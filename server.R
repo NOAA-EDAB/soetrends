@@ -153,6 +153,8 @@ function(input, output){
     ind <- message("No Data")
   }
   })
+  
+  
   output$timeseries<- renderPlot({
     
    ind<- ind()
@@ -190,7 +192,7 @@ function(input, output){
   
 
 
-  output$tableout <- DT::renderDataTable({
+  output$tableout <- DT::renderDataTable(server = FALSE,{
     ind<- ind()
 
     gam_norm<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) # calc gam
@@ -204,32 +206,29 @@ function(input, output){
       dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci
                     lower = pred.fit - pred.se.fit)
 
-    DT::datatable(ind2, extensions = "Buttons", 
-                  options = list(
-                    paging = TRUE,
-                    searching = TRUE,
-                    fixedColumns = TRUE,
-                    autoWidth = TRUE,
-                    ordering = TRUE,
-                    buttons = "csv"), 
-                  class = "display")
+    DT::datatable(ind2, extensions=c("Buttons",'Scroller'),
+                  options = list(dom = 'Bfrtip',
+                                 buttons = c( 'csv', 
+                                             'excel')))#,
+                                 #scrolly = 1,
+                                 #scroller = TRUE))
+      #             options = list(
+      # dom = 'Bfrtip',
+      # buttons = list(
+      #   list(extend = "csv", text = "Download Current Page", filename = "page",
+      #        exportOptions = list(
+      #          modifier = list(page = "current")
+      #        )
+      #   ),
+      #   list(extend = "csv", text = "Download Full Results", filename = "data",
+      #        exportOptions = list(
+      #          modifier = list(page = "all")
+                           #)))))
     })
 
-  #  output$download <- downloadHandler({
-  # 
-  # 
-  #    fname = function(){paste0(input$Indicator, "-",
-  #                                 input$epu_abbr, "-knots",
-  #                                 input$knots,".csv")}
-  #    content = function(fname){
-  #      write.csv(ind2, fname)
-  #    }
-  # })
 
   output$markdown <- renderUI({
     HTML(markdown::markdownToHTML(knit('documentation.rmd', quiet = TRUE)))
   })
-}
-  
-  
-)
+
+})

@@ -55,8 +55,8 @@ shinyUI(
       tabPanel("Plot/Summary", 
                plotOutput(outputId = "timeseries")),
       tabPanel("Table",
-               DT::dataTableOutput("tableout"), 
-               fluidRow(downloadButton('SampleDownload', "Download sample data"))), # in a tabitem)), 
+               DT::dataTableOutput("tableout")),#, 
+               #fluidPage(downloadButton('downloadData', "Download data"))), # in a tabitem)), 
       tabPanel("Documentation",
                htmlOutput("markdown"))
 

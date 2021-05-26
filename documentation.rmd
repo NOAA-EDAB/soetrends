@@ -22,11 +22,11 @@ knitr::include_graphics(here::here("images/EPU_Designations_Map.jpg"))
 **Choose Model Type**: The State of the Ecosystem reports use linear models to report on trends in datasets 30 years or longer. Based on feedback from SOE collaborators and the SSCs this app presents both the "SOE standard" trend line and the explorative GAM with confidence interval. The GAM can be manipulated using the knots and smoother function sliders. The AIC calculated for the GAM is presented below the plot and is calculate using the [AICcmodavg](https://www.rdocumentation.org/packages/AICcmodavg/versions/2.3-1/topics/AICcmodavg-package) R package. 
 
 **Number of knots**: 
-
+This is an optional list containing user specified knot values to be used for basis construction. For most bases the user simply supplies the knots to be used, which must match up with the k value supplied (note that the number of knots is not always just k). See tprs for what happens in the "tp"/"ts" case. Different terms can use different numbers of knots, unless they share a covariate. More details in `mgcv` [package documentation](https://www.rdocumentation.org/packages/mgcv/versions/1.8-35/topics/gam)
 
 **Smoother Function**:
 
-
+Increase this beyond 1 to produce smoother models. gamma multiplies the effective degrees of freedom in the GCV or UBRE/AIC. coden/gamma can be viewed as an effective sample size in the GCV score, and this also enables it to be used with REML/ML. Ignored with P-RE/ML or the efs optimizer. More details in `mgcv` [package documentation](https://www.rdocumentation.org/packages/mgcv/versions/1.8-35/topics/gam)
 
 
 

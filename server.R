@@ -164,13 +164,25 @@ function(input, output){
         new.dat<-data.frame(Time = ind$Time, # newdata
                           Value = ind$Value) 
         
+        ### Add derivative calculation!!!!!!!!!!!!!!!!!!! and plotting prep 
+        fd<- gratia::fderiv(gam_norm, new.dat) 
+        
+        ## How to find areas of local trend?? 
+        fd1<-  data.frame(fd$derivatives$`s(Time)`$deriv)   %>%     
+          dplyr::mutate(Time = ind$Time) %>% 
+          dplyr::rename( deriv = fd.derivatives..s.Time...deriv)
+        
         ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE )) %>% # calc predicted values
           dplyr::mutate(Time = ind$Time) %>% 
           left_join(ind) %>% # join with orig data set
+          left_join(fd1) %>% # join first deriv 
           dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                         lower = pred.fit - pred.se.fit)
         
-        ### Add derivative calculation!!!!!!!!!!!!!!!!!!! and plotting prep 
+
+          
+          
+        
         
         p2 <- ind2 %>% 
           ggplot2::ggplot()+
@@ -210,20 +222,7 @@ function(input, output){
                   options = list(dom = 'Bfrtip',
                                  buttons = c( 'csv', 
                                              'excel')))#,
-                                 #scrolly = 1,
-                                 #scroller = TRUE))
-      #             options = list(
-      # dom = 'Bfrtip',
-      # buttons = list(
-      #   list(extend = "csv", text = "Download Current Page", filename = "page",
-      #        exportOptions = list(
-      #          modifier = list(page = "current")
-      #        )
-      #   ),
-      #   list(extend = "csv", text = "Download Full Results", filename = "data",
-      #        exportOptions = list(
-      #          modifier = list(page = "all")
-                           #)))))
+
     })
 
 

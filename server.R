@@ -161,41 +161,64 @@ function(input, output){
       
         gam_norm<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) # calc gam
         
+        # Look into BS?
+        
+        
         new.dat<-data.frame(Time = ind$Time, # newdata
                           Value = ind$Value) 
         
-        ### Add derivative calculation!!!!!!!!!!!!!!!!!!! and plotting prep 
-        fd<- gratia::fderiv(gam_norm, new.dat) 
+        # calc deriv
+        fm1 <- gratia::derivatives(gam_norm)
+
+        trend <- fm1 %>%
+           mutate(upper_bound = ifelse(upper < 0,
+                                       "upper", "NA"),
+                  lower_bound = ifelse(lower > 0,
+                                      "lower", "NA")) %>%
+          mutate(Time = round(data)) %>%
+          group_by(Time) %>%
+          slice(1) %>% 
+          ungroup() %>% 
+          select(Time, upper_bound, lower_bound)
         
-        ## How to find areas of local trend?? 
-        fd1<-  data.frame(fd$derivatives$`s(Time)`$deriv)   %>%     
-          dplyr::mutate(Time = ind$Time) %>% 
-          dplyr::rename( deriv = fd.derivatives..s.Time...deriv)
+          #filter(!(upper_bound == "NA" & lower_bound == "NA"))
+
         
-        ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE )) %>% # calc predicted values
+        ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
           dplyr::mutate(Time = ind$Time) %>% 
           left_join(ind) %>% # join with orig data set
-          left_join(fd1) %>% # join first deriv 
           dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                         lower = pred.fit - pred.se.fit)
         
-
-          
-          
+       ind_decr <- ind2 %>% left_join(trend) %>% 
+         filter(upper_bound == "upper") %>% 
+         mutate(cat = c("Decreasing"))
+       
+       ind_incr <- ind2 %>% left_join(trend) %>% 
+         filter(lower_bound == "lower")%>% 
+         mutate(cat = c("Increasing"))
+       
+       ind_na<- ind2 %>% left_join(trend) %>% 
+         filter(lower_bound == "NA"& upper_bound == "NA")%>% 
+         mutate(cat = c("No Trend"))
+           
+       ind3<- rbind(ind_incr, ind_decr, ind_na)
         
         
-        p2 <- ind2 %>% 
+        p2 <- ind3 %>% 
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
           ecodata::geom_gls(aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-          ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+1, color = "gray")+
+          ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat), size = lwd+0.3, linetype = "dashed")+
+          scale_color_manual(values = c("Decreasing" = "purple", "Increasing" = "orange", "No Trend" = "gray"))+
           ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
           ggplot2::ylab(("Value")) +
           ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
           ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
           ggplot2::theme(axis.title.y = element_text(size = 10), 
-                         axis.title.x = element_text(size = 15))+
+                         axis.title.x = element_text(size = 15), 
+                         legend.position = "none")+
           ecodata::theme_ts()+
           ecodata::theme_title()
         p2

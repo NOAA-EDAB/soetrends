@@ -32,6 +32,7 @@ function(input, output){
   x.shade.min <- 2010
   x.shade.max <- 2020
   
+  
   # Managed Revenue ###################
   ind<- reactive({ 
     if (input$Indicator == "Revenue_Managed") { 

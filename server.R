@@ -61,10 +61,11 @@ function(input, output){
     # Managed Landings #############################
   } else if (input$Indicator == "Landings_Managed") {               
     managed_landings <- ecodata::comdat  %>%
-      dplyr::filter(stringr::str_detect(Var, paste0(council_abbr," managed species - Landings weight|JOINT managed species - Landings weight")),
+      dplyr::filter(EPU == input$epu_abbr,
+      #dplyr::mutate(Var = gsub("MAFMC", "MABFMC", .$Var)) %>% 
+                    stringr::str_detect(Var, paste0("FMC managed species - Landings weight|JOINT managed species - Landings weight")),
                     !stringr::str_detect(Var, "Other"),
-                    Time >= 1986,
-                    EPU == input$epu_abbr)
+                    Time >= 1986)
     apex<-ecodata::hms_landings %>% 
       dplyr::filter(stringr::str_detect(Var, "Landings")) %>% 
       separate(Var, c("Var", "trash"), sep = "_") %>% 
@@ -162,12 +163,9 @@ function(input, output){
       
         gam_norm<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) # calc gam
         
-        # Look into BS?
-        
-        
         new.dat<-data.frame(Time = ind$Time, # newdata
-                          Value = ind$Value) 
-        
+                            Value = ind$Value) 
+
         # calc deriv
         fm1 <- gratia::derivatives(gam_norm)
 
@@ -182,8 +180,8 @@ function(input, output){
           ungroup() %>% 
           select(Time, upper_bound, lower_bound)
         
-          #filter(!(upper_bound == "NA" & lower_bound == "NA"))
-
+          # Add second deriv
+        #inflection <- rle(as.vector(fm1$derivative))
         
         ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
           dplyr::mutate(Time = ind$Time) %>% 

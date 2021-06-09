@@ -1,80 +1,9 @@
-### Summary Stats for GAM outputs
+# Stat Summary - Mid-Atlantic Bight
+```{r setup, echo=FALSE}
+library(tidyverse)
+library(ecodata)
+library(patchwork)
 
-# For each of the indicators run through multiple knot and smoother combiations to visualise where GAMs show relatively fixed outputs. 
-
-
-# input<- list()
-# input$epu_abbr <- "MAB"
-# 
-# ## Managed Landings
-# managed_landings <- ecodata::comdat  %>%
-#   dplyr::filter(EPU == input$epu_abbr,
-#                 #dplyr::mutate(Var = gsub("MAFMC", "MABFMC", .$Var)) %>% 
-#                 stringr::str_detect(Var, paste0("FMC managed species - Landings weight|JOINT managed species - Landings weight")),
-#                 !stringr::str_detect(Var, "Other"),
-#                 Time >= 1986)
-# apex<-ecodata::hms_landings %>% 
-#   dplyr::filter(stringr::str_detect(Var, "Landings")) %>% 
-#   separate(Var, c("Var", "trash"), sep = "_") %>% 
-#   group_by(YEAR) %>% 
-#   summarise(Value = sum(Value)) %>% 
-#   rename( Time = YEAR) %>% 
-#   mutate(Var = c("HMS Landings"), 
-#          Units = c("metric tons"), 
-#          EPU = c(input$epu_abbr))
-# total_landings <- ecodata::comdat  %>%
-#   dplyr::filter(!stringr::str_detect(Var, "managed species"),
-#                 !stringr::str_detect(Var, "Other"),
-#                 !stringr::str_detect(Var, "Apex"),
-#                 stringr::str_detect(Var, "Landings"),
-#                 Time >= 1986,
-#                 EPU == input$epu_abbr) %>% 
-#   rbind(apex)
-# total_landings_agg <- total_landings %>%
-#   dplyr::group_by(Time) %>%
-#   dplyr::summarise(Value = sum(Value)) %>% 
-#   dplyr::mutate(Var = "Total",hline = mean(Value))
-# managed_landings_agg <- managed_landings %>%
-#   dplyr::group_by(Time) %>%
-#   dplyr::summarise(Value = sum(Value)) %>% 
-#   dplyr::mutate(Var = "Managed",hline = mean(Value))
-# ind <- managed_landings_agg 
-# 
-# 
-# 
-# df<- data.frame()
-# for (i in indicator){
-#   for (k in knots){
-#     for (g in gamma){
-#     gam_norm<- mgcv::gam(Value ~ s(Time, k=k), data = ind, na.action = na.omit, gamma = g) # calc gam
-#     aic<-AICcmodavg::AICc(gam_norm)
-#     
-#     df1<- data.frame(knots = k, 
-#                     gamma = g,
-#                     AIC = aic, 
-#                     ind = c("landings_managed")) %>% 
-#       rbind(df1) %>% 
-#       mutate(AIC = round(AIC))
-#     
-#     length(unique(df1$AIC))
-#     
-#     range(df1$AIC)
-#     
-#     df1 %>% ggplot2::ggplot()+
-#       ggplot2::geom_point(aes(x = knots, y = gamma, color = AIC))
-#     
-#     }
-#   }
-# }
-# 
-# # Plots showing number of local AIC minimums
-# 
-# df1 %>% ggplot2::ggplot()+
-#   ggplot2::geom_point(aes(x = knots, y = gamma, color = AIC))+
-#   ggtitle("landings_managed")
-# 
-
-# COmpiled list of Data
 df1<- data.frame()
 get_summary<- function(indicator, epu_abbr){
   
@@ -231,10 +160,16 @@ get_summary<- function(indicator, epu_abbr){
   print(dat)
   print(plot)
 }
+```
+This section holds some static summary statistics compiled for all datasets currently loaded into this app. 
 
-get_summary("Bottom_Temp", "MAB")
+## Human Dimension indicators
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
 get_summary("Recreational_Seafood_Harvest", "MAB")
 get_summary("Recreational_Effort", "MAB")
 get_summary("Landings_Managed", "MAB")
+get_summary("Revenue_Managed", "MAB")
 
-get_summary("Zooplankton_Diversity", "MAB")
+```
+
+## Low Trophic indicators

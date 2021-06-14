@@ -1,5 +1,5 @@
 # Stat Summary - Mid-Atlantic Bight
-```{r setup, echo=FALSE}
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ecodata)
 library(patchwork)
@@ -157,18 +157,54 @@ get_summary<- function(indicator, epu_abbr){
                    N_AIC = length(unique(df1$AIC)), 
                    min_AIC = min(df1$AIC), 
                    max_AIC = max(df1$AIC))
-  print(dat)
-  print(plot)
+  
+ out<-list( dat, plot)
 }
 ```
 This section holds some static summary statistics compiled for all datasets currently loaded into this app. 
 
+## Summary Stats
+
+This table shows a summary for the Mid-Atlantic indicators. 
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+landings_managed<- get_summary("Landings_Managed", "MAB")
+rev_managed<- get_summary("Revenue_Managed", "MAB")
+rec_landings<- get_summary("Recreational_Seafood_Harvest", "MAB")
+rec_effort <- get_summary("Recreational_Effort", "MAB")
+rec_catch_div<- get_summary("Recreational_Catch_Diversity", "MAB")
+bot_temp<- get_summary("Bottom_Temp", "MAB")
+cumu_hw<- get_summary("Heatwave_Cumulative_Intensity", "MAB")
+max_hw<-get_summary("Heatwave_Maximum_Intensity", "MAB")
+
+
+all<- landings_managed[[1]] %>% rbind(rev_managed[[1]], 
+                                      rec_landings[[1]], 
+                                      rec_effort[[1]], 
+                                      rec_catch_div[[1]],
+                                      bot_temp[[1]],
+                                      cumu_hw[[1]], 
+                                      max_hw[[1]])
+
+knitr::kable(all, caption = "Summary of AIC outputs from GAM analyses run. Knots range from 1-20 and gamma ranges from 1-9 creating 180 GAM combinations. This summary shows the number of unique gam trend lines and the AIC ranges for those analyses.")
+```
+
+Figures below show the value of the AIC of GAMs with different knots and gamma assigned. The GAM formulas are as follows:
+
+$$
+
+y ~ s(x)
+
+$$
+y = Value of the indicator where x = Time. These simple GAMs where interated through while changing the number of knots and the gamma value. The number of knots
+
 ## Human Dimension indicators {.tabset}
+
 
 ### Commercial
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-get_summary("Landings_Managed", "MAB")
-get_summary("Revenue_Managed", "MAB")
+
+landings_managed[[2]]
+rev_managed[[2]]
 
 ```
 
@@ -176,17 +212,18 @@ get_summary("Revenue_Managed", "MAB")
 ### Recreational
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-get_summary("Recreational_Seafood_Harvest", "MAB")
-get_summary("Recreational_Effort", "MAB")
-get_summary("Recreational_Catch_Diversity", "MAB")
+
+rec_landings[[2]]
+rec_effort[[2]]
+rec_catch_div[[2]]
 ```
 
-## Low Trophic indicators
+## Temperature indicators
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-get_summary("Bottom_Temp", "MAB")
-get_summary("Heatwave_Cumulative_Intensity", "MAB")
-get_summary("Heatwave_Maximum_Intensity", "MAB")
 
+bot_temp[[2]]
+cumu_hw[[2]]
+max_hw[[2]]
 
 ```
 

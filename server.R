@@ -252,4 +252,7 @@ function(input, output){
     HTML(markdown::markdownToHTML(knit('documentation.rmd', quiet = TRUE)))
   })
 
+  #output$markdown <- renderUI({
+  #  HTML(markdown::markdownToHTML(knit('stat_summary.rmd', quiet = TRUE)))
+  #})
 })

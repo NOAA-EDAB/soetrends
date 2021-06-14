@@ -58,7 +58,9 @@ shinyUI(
                DT::dataTableOutput("tableout")),#, 
                #fluidPage(downloadButton('downloadData', "Download data"))), # in a tabitem)), 
       tabPanel("Documentation",
-               htmlOutput("markdown"))
+               htmlOutput("markdown"))#,
+      #tabPanel("Summary Stats",
+       #        htmlOutput("markdown"))
 
     )
     )

@@ -172,6 +172,7 @@ rev_managed<- get_summary("Revenue_Managed", "MAB")
 rec_landings<- get_summary("Recreational_Seafood_Harvest", "MAB")
 rec_effort <- get_summary("Recreational_Effort", "MAB")
 rec_catch_div<- get_summary("Recreational_Catch_Diversity", "MAB")
+zooplankton <- get_summary("Zooplankton_Diversity", "MAB")
 bot_temp<- get_summary("Bottom_Temp", "MAB")
 cumu_hw<- get_summary("Heatwave_Cumulative_Intensity", "MAB")
 max_hw<-get_summary("Heatwave_Maximum_Intensity", "MAB")
@@ -181,6 +182,7 @@ all<- landings_managed[[1]] %>% rbind(rev_managed[[1]],
                                       rec_landings[[1]], 
                                       rec_effort[[1]], 
                                       rec_catch_div[[1]],
+                                      zooplankton[[1]],
                                       bot_temp[[1]],
                                       cumu_hw[[1]], 
                                       max_hw[[1]])
@@ -195,35 +197,55 @@ $$
 y ~ s(x)
 
 $$
+
 y = Value of the indicator where x = Time. These simple GAMs where interated through while changing the number of knots and the gamma value. The number of knots
 
-## Human Dimension indicators {.tabset}
+## Indicators {.tabset}
 
 
-### Commercial
+### Commercial Landings
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-
 landings_managed[[2]]
-rev_managed[[2]]
+```
 
+### Commercial Revenue
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+rev_managed[[2]]
+```
+
+### Recreational Landings
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+rec_landings[[2]]
+```
+
+### Recreational Effort
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+rec_effort[[2]]
 ```
 
 
-### Recreational
-
+### Recreational Catch Diversity
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-
-rec_landings[[2]]
-rec_effort[[2]]
 rec_catch_div[[2]]
 ```
 
-## Temperature indicators
+
+### Zooplankton Diversity
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-
-bot_temp[[2]]
-cumu_hw[[2]]
-max_hw[[2]]
-
+zooplankton[[2]]
 ```
 
+### Bottom Temperature
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+bot_temp[[2]]
+```
+
+### Cumulative Heatwave
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+cumu_hw[[2]]
+```
+
+### Maximum Heatwave
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+max_hw[[2]]
+```

@@ -189,28 +189,46 @@ function(input, output){
           dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                         lower = pred.fit - pred.se.fit)
         
-       ind_decr <- ind2 %>% left_join(trend) %>% 
-         filter(upper_bound == "upper") %>% 
-         mutate(cat = c("Decreasing"))
-       
-       ind_incr <- ind2 %>% left_join(trend) %>% 
-         filter(lower_bound == "lower")%>% 
-         mutate(cat = c("Increasing"))
-       
-       ind_na<- ind2 %>% left_join(trend) %>% 
-         filter(lower_bound == "NA"& upper_bound == "NA")%>% 
-         mutate(cat = c("No Trend"))
-           
-       ind3<- rbind(ind_incr, ind_decr, ind_na)
         
+        # ind3<- ind2 %>% left_join(trend) %>%
+        #   mutate(Cat = case_when(upper_bound == "upper" & lower_bound == "NA" ~ "Decreasing",
+        #                          upper_bound == "NA" & lower_bound == "lower" ~ "Increasing",
+        #                          upper_bound == "NA" & lower_bound == "NA" ~ "NoTrend"))
+
+        
+        ind_decr <- ind2 %>% left_join(trend) %>%
+          mutate(cat = case_when(upper_bound == "upper"~"Decreasing",
+                                 upper_bound == "NA" ~"NA"))
+
+
+       ind_incr <- ind2 %>% left_join(trend) %>%
+         mutate(cat = case_when(lower_bound == "lower" ~ "Increasing",
+                                lower_bound == "NA" ~ "NA"))
+
+       ind_na<- ind2 %>% left_join(trend) %>%
+          mutate(cat = case_when(lower_bound == "NA"& upper_bound == "NA"~"NoTrend",
+                                 lower_bound == "lower" & upper_bound == "NA" ~"NA",
+                                 lower_bound == "NA" & upper_bound == "upper" ~ "NA"))
+
+        ind3<- rbind(ind_na,ind_incr, ind_decr)
+        
+        # gls_use<- ind3 %>% 
+        #   filter(Time == unique(Time))
         
         p2 <- ind3 %>% 
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-          ecodata::geom_gls(aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-          ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat), size = lwd+0.3, linetype = "dashed")+
-          scale_color_manual(values = c("Decreasing" = "purple", "Increasing" = "orange", "No Trend" = "gray"))+
+          ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
+          #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = Cat), size = lwd+0.3, linetype = "dashed")+
+          ggplot2::geom_path(data = ind_na,   aes(x = Time, y = pred.fit, color = cat, group = 1),
+                             size = lwd+0.3, na.rm = FALSE)+ #, linetype = "dashed")+
+          ggplot2::geom_path(data = ind_incr, aes(x = Time, y = pred.fit, color = cat, group = 1), 
+                             size = lwd+0.3, na.rm = FALSE)+#, linetype = "dashed")+
+          ggplot2::geom_path(data = ind_decr, aes(x = Time, y = pred.fit, color = cat, group = 1), 
+                             size = lwd+0.3, na.rm = FALSE)+#, linetype = "dashed")+
+          scale_color_manual(values = c("Decreasing" = "purple", "Increasing" = "orange", "NoTrend" = "gray", 
+                                        "NA" = NA))+
           ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
           ggplot2::ylab(("Value")) +
           ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+

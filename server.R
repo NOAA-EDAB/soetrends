@@ -190,45 +190,40 @@ function(input, output){
                         lower = pred.fit - pred.se.fit)
         
         
-        # ind3<- ind2 %>% left_join(trend) %>%
-        #   mutate(Cat = case_when(upper_bound == "upper" & lower_bound == "NA" ~ "Decreasing",
-        #                          upper_bound == "NA" & lower_bound == "lower" ~ "Increasing",
-        #                          upper_bound == "NA" & lower_bound == "NA" ~ "NoTrend"))
+        ind3<- ind2 %>% left_join(trend) %>%
+          mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
+                                 upper_bound == "NA" & lower_bound == "lower" ~ 0,
+                                 upper_bound == "NA" & lower_bound == "NA" ~ -1))
+        
+        ## Andy's loop-
+        catlabel <- 1
+        df<- ind3 %>% select(Time, cat2) %>% 
+          mutate(change = cat2, 
+                  cat = NA)
+        for (irow in 1:nrow(df)) {
+          #print(irow)
+          if (irow == 1) {
+            df$cat[1] <- catlabel
+            next
+          }
+          
+          if ((df$change[irow]-df$change[irow-1]) == 0) {
+          } else {
+            catlabel=catlabel + 1
+          }
+          df$cat[irow] <- catlabel
+          # 
+        }
 
         
-        ind_decr <- ind2 %>% left_join(trend) %>%
-          mutate(cat = case_when(upper_bound == "upper"~"Decreasing",
-                                 upper_bound == "NA" ~"NA"))
-
-
-       ind_incr <- ind2 %>% left_join(trend) %>%
-         mutate(cat = case_when(lower_bound == "lower" ~ "Increasing",
-                                lower_bound == "NA" ~ "NA"))
-
-       ind_na<- ind2 %>% left_join(trend) %>%
-          mutate(cat = case_when(lower_bound == "NA"& upper_bound == "NA"~"NoTrend",
-                                 lower_bound == "lower" & upper_bound == "NA" ~"NA",
-                                 lower_bound == "NA" & upper_bound == "upper" ~ "NA"))
-
-        ind3<- rbind(ind_na,ind_incr, ind_decr)
-        
-        # gls_use<- ind3 %>% 
-        #   filter(Time == unique(Time))
-        
+        ### Plot
         p2 <- ind3 %>% 
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
           ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-          #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = Cat), size = lwd+0.3, linetype = "dashed")+
-          ggplot2::geom_path(data = ind_na,   aes(x = Time, y = pred.fit, color = cat, group = 1),
-                             size = lwd+0.3, na.rm = FALSE)+ #, linetype = "dashed")+
-          ggplot2::geom_path(data = ind_incr, aes(x = Time, y = pred.fit, color = cat, group = 1), 
-                             size = lwd+0.3, na.rm = FALSE)+#, linetype = "dashed")+
-          ggplot2::geom_path(data = ind_decr, aes(x = Time, y = pred.fit, color = cat, group = 1), 
-                             size = lwd+0.3, na.rm = FALSE)+#, linetype = "dashed")+
-          scale_color_manual(values = c("Decreasing" = "purple", "Increasing" = "orange", "NoTrend" = "gray", 
-                                        "NA" = NA))+
+          ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
+          scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
           ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
           ggplot2::ylab(("Value")) +
           ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+

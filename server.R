@@ -215,7 +215,9 @@ function(input, output){
           # 
         }
 
-        
+        ind3<- ind3 %>% left_join(df) %>% 
+          mutate(cat = as.character(cat), 
+                 cat2 = as.character(cat2))
         ### Plot
         p2 <- ind3 %>% 
           ggplot2::ggplot()+

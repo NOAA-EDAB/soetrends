@@ -1,6 +1,8 @@
 # Trend Analysis Documentation
 
-## **CLICK HERE for [Mid-Atlantic indicators GAM summary statistics](https://noaa-edab.github.io/soetrends/stat_summary)**
+## **CLICK HERE for [Mid-Atlantic indicators GAM summary statistics](https://noaa-edab.github.io/soetrends/stat_summary_MA)**
+
+## **CLICK HERE for [New England indicators GAM summary statistics](https://noaa-edab.github.io/soetrends/stat_summary_NE)**
 
 This shiny application was developed to explore State of the Ecosystem indicator trend analysis. If you have questions not answered below please contact Kimberly.bastille@noaa.gov.
 

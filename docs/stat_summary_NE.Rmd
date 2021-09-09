@@ -1,4 +1,4 @@
-# Stat Summary - Mid-Atlantic Bight
+# Stat Summary - New England
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ecodata)
@@ -153,10 +153,9 @@ get_summary<- function(indicator, epu_abbr){
     ggplot2::scale_fill_gradientn(colours = terrain.colors(10))+
     ggtitle(paste0(indicator, "_", epu_abbr))
   
-  dat<- data.frame(ind = indicator, 
+  dat<- data.frame(ind = indicator, epu = epu_abbr,
                    N_AIC = length(unique(df1$AIC)), 
-                   min_AIC = min(df1$AIC), 
-                   max_AIC = max(df1$AIC))
+                   range_AIC =  max(df1$AIC) - min(df1$AIC))
   
  out<-list( dat, plot)
 }
@@ -167,25 +166,30 @@ This section holds some static summary statistics compiled for all datasets curr
 
 This table shows a summary for the Mid-Atlantic indicators. 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-landings_managed<- get_summary("Landings_Managed", "MAB")
-rev_managed<- get_summary("Revenue_Managed", "MAB")
-rec_landings<- get_summary("Recreational_Seafood_Harvest", "MAB")
-rec_effort <- get_summary("Recreational_Effort", "MAB")
-rec_catch_div<- get_summary("Recreational_Catch_Diversity", "MAB")
-zooplankton <- get_summary("Zooplankton_Diversity", "MAB")
-bot_temp<- get_summary("Bottom_Temp", "MAB")
-cumu_hw<- get_summary("Heatwave_Cumulative_Intensity", "MAB")
-max_hw<-get_summary("Heatwave_Maximum_Intensity", "MAB")
+landings_managed_gom<- get_summary("Landings_Managed", "GOM")
+landings_managed_gb<- get_summary("Landings_Managed", "GB")
+rev_managed_gom<- get_summary("Revenue_Managed", "GOM")
+rev_managed_gb<- get_summary("Revenue_Managed", "GB")
+rec_landings<- get_summary("Recreational_Seafood_Harvest", "NE")
+rec_effort <- get_summary("Recreational_Effort", "NE")
+rec_catch_div<- get_summary("Recreational_Catch_Diversity", "NE")
+zooplankton_gom <- get_summary("Zooplankton_Diversity", "GOM")
+zooplankton_gb <- get_summary("Zooplankton_Diversity", "GB")
+bot_temp_gom<- get_summary("Bottom_Temp", "GOM")
+bot_temp_gb<- get_summary("Bottom_Temp", "GB")
+cumu_hw_gom<- get_summary("Heatwave_Cumulative_Intensity", "GOM")
+cumu_hw_gb<- get_summary("Heatwave_Cumulative_Intensity", "GB")
+max_hw_gom<-get_summary("Heatwave_Maximum_Intensity", "GOM")
+max_hw_gb<-get_summary("Heatwave_Maximum_Intensity", "GB")
 
 
-all<- landings_managed[[1]] %>% rbind(rev_managed[[1]], 
-                                      rec_landings[[1]], 
-                                      rec_effort[[1]], 
-                                      rec_catch_div[[1]],
-                                      zooplankton[[1]],
-                                      bot_temp[[1]],
-                                      cumu_hw[[1]], 
-                                      max_hw[[1]])
+all<- landings_managed_gom[[1]] %>% rbind(landings_managed_gb[[1]], 
+                                          rev_managed_gom[[1]], rev_managed_gb[[1]], 
+                                          rec_landings[[1]],rec_effort[[1]], rec_catch_div[[1]],
+                                          zooplankton_gom[[1]],zooplankton_gb[[1]],
+                                          bot_temp_gom[[1]], bot_temp_gb[[1]],
+                                          cumu_hw_gom[[1]], cumu_hw_gb[[1]],
+                                          max_hw_gom[[1]], max_hw_gb[[1]])
 
 knitr::kable(all, caption = "Summary of AIC outputs from GAM analyses run. Knots range from 1-20 and gamma ranges from 1-9 creating 180 GAM combinations. This summary shows the number of unique gam trend lines and the AIC ranges for those analyses.")
 ```
@@ -205,12 +209,16 @@ y = Value of the indicator where x = Time. These simple GAMs where interated thr
 
 ### Commercial Landings
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-landings_managed[[2]]
+landings_managed_gom[[2]]
+
+landings_managed_gb[[2]]
 ```
 
 ### Commercial Revenue
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-rev_managed[[2]]
+rev_managed_gom[[2]]
+
+rev_managed_gb[[2]]
 ```
 
 ### Recreational Landings
@@ -232,20 +240,28 @@ rec_catch_div[[2]]
 
 ### Zooplankton Diversity
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-zooplankton[[2]]
+zooplankton_gom[[2]]
+
+zooplankton_gb[[2]]
 ```
 
 ### Bottom Temperature
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-bot_temp[[2]]
+bot_temp_gom[[2]]
+
+bot_temp_gb[[2]]
 ```
 
 ### Cumulative Heatwave
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-cumu_hw[[2]]
+cumu_hw_gom[[2]]
+
+cumu_hw_gb[[2]]
 ```
 
 ### Maximum Heatwave
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-max_hw[[2]]
+max_hw_gom[[2]]
+
+max_hw_gb[[2]]
 ```

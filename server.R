@@ -161,7 +161,8 @@ function(input, output){
     
    ind<- ind()
       
-        gam_norm<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) # calc gam
+        gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
+        #gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
         
         new.dat<-data.frame(Time = ind$Time, # newdata
                             Value = ind$Value) 

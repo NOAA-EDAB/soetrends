@@ -28,22 +28,21 @@ shinyUI(
                                                                                "LTSST"="LTSST"),
                   selected = "LTSST",multiple = F),
 
-      selectInput(inputId="Model",label="Choose model type",choices = c("GAM"="GAM"),
-                  selected = "GAM",multiple = F),
+      checkboxInput("Model",label="GAM",value = TRUE),
 
-      sliderInput(inputId = "knots",
-                  label = "Number of knots:",
-                  min = 0,
-                  max = 30,
-                  value = 3,
-                  step = 1),
-
-      sliderInput(inputId = "gamma",
-                  label = "Smoother Function:",
-                  min = 0,
-                  max = 10,
-                  value = 1,
-                  step = 0.01)#, 
+      # sliderInput(inputId = "knots",
+      #             label = "Number of knots:",
+      #             min = 0,
+      #             max = 30,
+      #             value = 3,
+      #             step = 1),
+      # 
+      # sliderInput(inputId = "gamma",
+      #             label = "Smoother Function:",
+      #             min = 0,
+      #             max = 10,
+      #             value = 1,
+      #             step = 0.01)#, 
      # downloadButton('download',"Download the data")
     ),
 

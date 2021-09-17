@@ -264,7 +264,7 @@ function(input, output){
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-          ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
+          ecodata::geom_gls(data = ind, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
           #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
           #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
           #ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
@@ -281,26 +281,29 @@ function(input, output){
         
         if(!isFALSE(input$GAM_Norm)) {
           p3 <- p3 +
-            ggplot2::geom_line(data = norm, aes(x = Time, y = pred.fit), colour = "turquoise2", size = lwd+0.3, linetype = "dashed")+
+            ggplot2::geom_line(data = norm, aes(x = Time, y = pred.fit), colour = "#00BFC4", size = lwd+0.3, linetype = "dashed")+
             #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-            ggplot2::geom_ribbon(data = norm, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "turquoise2", alpha = 0.3)
+            ggplot2::geom_ribbon(data = norm, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#00BFC4", alpha = 0.3)
         }
         if(!isFALSE(input$GAM_Smooth)) {
           p3 <- p3 +
-            ggplot2::geom_line(data = smooth, aes(x = Time, y = pred.fit), colour = "violetred2", size = lwd+0.3, linetype = "dashed")+
+            ggplot2::geom_line(data = smooth, aes(x = Time, y = pred.fit), colour = "#F8766D", size = lwd+0.3, linetype = "dashed")+
             #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-            ggplot2::geom_ribbon(data = smooth, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "violetred2", alpha = 0.3)
+            ggplot2::geom_ribbon(data = smooth, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#F8766D", alpha = 0.3)
         }
         if(!isFALSE(input$GAM_AR1)) {
           p3 <- p3 +
-            ggplot2::geom_line(data = ar1, aes(x = Time, y = pred.fit), colour = "seagreen2", size = lwd+0.3, linetype = "dashed")+
+            ggplot2::geom_line(data = ar1, aes(x = Time, y = pred.fit), colour = "#7CAE00", size = lwd+0.3, linetype = "dashed")+
             #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-            ggplot2::geom_ribbon(data = ar1, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "seagreen2", alpha = 0.3)
+            ggplot2::geom_ribbon(data = ar1, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#7CAE00", alpha = 0.3)
         }
         
+        p3<- p3+
+          scale_colour_discrete(name="Model",
+                              breaks=c("#00BFC4", "#F8766D", "#7CAE00"),
+                              labels=c("Blue", "Red", "Green"))
+        
         p3
-        
-        
         
         
         

@@ -162,82 +162,150 @@ function(input, output){
    ind<- ind()
       
         gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-        #gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
+        gam_smooth<- mgcv::gam(Value ~ s(Time), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+        gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
         
         new.dat<-data.frame(Time = ind$Time, # newdata
                             Value = ind$Value) 
-
-        # calc deriv
-        fm1 <- gratia::derivatives(gam_norm)
-
-        trend <- fm1 %>%
-           mutate(upper_bound = ifelse(upper < 0,
-                                       "upper", "NA"),
-                  lower_bound = ifelse(lower > 0,
-                                      "lower", "NA")) %>%
-          mutate(Time = round(data)) %>%
-          group_by(Time) %>%
-          slice(1) %>% 
-          ungroup() %>% 
-          select(Time, upper_bound, lower_bound)
         
-          # Add second deriv
-        #inflection <- rle(as.vector(fm1$derivative))
-        
-        ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
+        norm<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
+          dplyr::mutate(Time = ind$Time) %>% 
+          left_join(ind) %>% # join with orig data set
+          dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
+                        lower = pred.fit - pred.se.fit)
+
+        smooth<-data.frame(pred = mgcv::predict.gam(gam_smooth, new.dat, se.fit = TRUE)) %>% # calc predicted values
           dplyr::mutate(Time = ind$Time) %>% 
           left_join(ind) %>% # join with orig data set
           dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                         lower = pred.fit - pred.se.fit)
         
+        ar1<- data.frame(pred = mgcv::predict.gam(gam_ar1$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
+          dplyr::mutate(Time = ind$Time) %>% 
+          left_join(ind) %>% # join with orig data set
+          dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
+                        lower = pred.fit - pred.se.fit)
+        # ## calc deriv
+        # fm1 <- gratia::derivatives(gam_norm)
+        # 
+        # trend <- fm1 %>%
+        #    mutate(upper_bound = ifelse(upper < 0,
+        #                                "upper", "NA"),
+        #           lower_bound = ifelse(lower > 0,
+        #                               "lower", "NA")) %>%
+        #   mutate(Time = round(data)) %>%
+        #   group_by(Time) %>%
+        #   slice(1) %>% 
+        #   ungroup() %>% 
+        #   select(Time, upper_bound, lower_bound)
+        # 
+        #   # Add second deriv
+        # inflection <- rle(as.vector(fm1$derivative))
         
-        ind3<- ind2 %>% left_join(trend) %>%
-          mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
-                                 upper_bound == "NA" & lower_bound == "lower" ~ 0,
-                                 upper_bound == "NA" & lower_bound == "NA" ~ -1))
+        # ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
+        #   dplyr::mutate(Time = ind$Time) %>% 
+        #   left_join(ind) %>% # join with orig data set
+        #   dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
+        #                 lower = pred.fit - pred.se.fit)
         
-        ## Andy's loop-
-        catlabel <- 1
-        df<- ind3 %>% select(Time, cat2) %>% 
-          mutate(change = cat2, 
-                  cat = NA)
-        for (irow in 1:nrow(df)) {
-          #print(irow)
-          if (irow == 1) {
-            df$cat[1] <- catlabel
-            next
-          }
-          
-          if ((df$change[irow]-df$change[irow-1]) == 0) {
-          } else {
-            catlabel=catlabel + 1
-          }
-          df$cat[irow] <- catlabel
-          # 
-        }
-
-        ind3<- ind3 %>% left_join(df) %>% 
-          mutate(cat = as.character(cat), 
-                 cat2 = as.character(cat2))
+        
+        # ind3<- ind2 %>% left_join(trend) %>%
+        #   mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
+        #                          upper_bound == "NA" & lower_bound == "lower" ~ 0,
+        #                          upper_bound == "NA" & lower_bound == "NA" ~ -1))
+        # 
+        # ## Andy's loop-
+        # catlabel <- 1
+        # df<- ind3 %>% select(Time, cat2) %>% 
+        #   mutate(change = cat2, 
+        #           cat = NA)
+        # for (irow in 1:nrow(df)) {
+        #   #print(irow)
+        #   if (irow == 1) {
+        #   df$cat[1] <- catlabel
+        #     next
+        #   }
+        #   
+        #   if ((df$change[irow]-df$change[irow-1]) == 0) {
+        #   } else {
+        #     catlabel=catlabel + 1
+        #   }
+        #   df$cat[irow] <- catlabel
+        #   # 
+        # }
+        # 
+        # ind3<- ind3 %>% left_join(df) %>% 
+        #   mutate(cat = as.character(cat), 
+        #          cat2 = as.character(cat2))
         ### Plot
-        p2 <- ind3 %>% 
+        # p2 <- ind3 %>% 
+        #   ggplot2::ggplot()+
+        #   ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
+        #   ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
+        #   ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
+        #   ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
+        #   scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+        #   ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
+        #   ggplot2::ylab(("Value")) +
+        #   ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
+        #   ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
+        #   ggplot2::theme(axis.title.y = element_text(size = 10), 
+        #                  axis.title.x = element_text(size = 15), 
+        #                  legend.position = "none")+
+        #   ecodata::theme_ts()+
+        #   ecodata::theme_title()
+        # p2
+
+        
+        
+        
+        ### New plot
+        p3<- ind %>% 
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
           ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-          ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
-          scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-          ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
+          #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
+          #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+          #ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
           ggplot2::ylab(("Value")) +
-          ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
+          #ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
           ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
           ggplot2::theme(axis.title.y = element_text(size = 10), 
                          axis.title.x = element_text(size = 15), 
                          legend.position = "none")+
           ecodata::theme_ts()+
           ecodata::theme_title()
-        p2
-
+        
+        
+        
+        if(!isFALSE(input$GAM_Norm)) {
+          p3 <- p3 +
+            ggplot2::geom_line(data = norm, aes(x = Time, y = pred.fit), colour = "turquoise2", size = lwd+0.3, linetype = "dashed")+
+            #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+            ggplot2::geom_ribbon(data = norm, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "turquoise2", alpha = 0.3)
+        }
+        if(!isFALSE(input$GAM_Smooth)) {
+          p3 <- p3 +
+            ggplot2::geom_line(data = smooth, aes(x = Time, y = pred.fit), colour = "violetred2", size = lwd+0.3, linetype = "dashed")+
+            #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+            ggplot2::geom_ribbon(data = smooth, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "violetred2", alpha = 0.3)
+        }
+        if(!isFALSE(input$GAM_AR1)) {
+          p3 <- p3 +
+            ggplot2::geom_line(data = ar1, aes(x = Time, y = pred.fit), colour = "seagreen2", size = lwd+0.3, linetype = "dashed")+
+            #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+            ggplot2::geom_ribbon(data = ar1, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "seagreen2", alpha = 0.3)
+        }
+        
+        p3
+        
+        
+        
+        
+        
+        
+        
   })
   
 

@@ -28,7 +28,9 @@ shinyUI(
                                                                                "LTSST"="LTSST"),
                   selected = "LTSST",multiple = F),
 
-      checkboxInput("Model",label="GAM",value = TRUE),
+      checkboxInput("GAM_Norm",label="GAM",value = TRUE),
+      checkboxInput("GAM_Smooth",label="GAM_smooth",value = TRUE),
+      checkboxInput("GAM_AR1",label="GAM_AR1",value = TRUE),
 
       # sliderInput(inputId = "knots",
       #             label = "Number of knots:",

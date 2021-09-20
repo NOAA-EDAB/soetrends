@@ -54,7 +54,9 @@ shinyUI(
 
       # Output: Histogram ----
       tabPanel("Plot/Summary", 
-               plotOutput(outputId = "timeseries")),
+               plotOutput(outputId = "timeseries"),
+               DT::dataTableOutput("aictable"), 
+               plotOutput(outputId = "residuals")),
       tabPanel("Table",
                DT::dataTableOutput("tableout")),#, 
                #fluidPage(downloadButton('downloadData', "Download data"))), # in a tabitem)), 

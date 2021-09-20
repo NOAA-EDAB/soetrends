@@ -281,21 +281,21 @@ function(input, output){
         
         if(!isFALSE(input$GAM_Norm)) {
           p3 <- p3 +
-            ggplot2::geom_line(data = norm, aes(x = Time, y = pred.fit), colour = "#00BFC4", size = lwd+0.3, linetype = "dashed")+
+            ggplot2::geom_line(data = norm, aes(x = Time, y = pred.fit), colour = "#F8766D", size = lwd+0.3, linetype = "dashed")+
             #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-            ggplot2::geom_ribbon(data = norm, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#00BFC4", alpha = 0.3)
+            ggplot2::geom_ribbon(data = norm, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#F8766D", alpha = 0.3)
         }
         if(!isFALSE(input$GAM_Smooth)) {
           p3 <- p3 +
-            ggplot2::geom_line(data = smooth, aes(x = Time, y = pred.fit), colour = "#F8766D", size = lwd+0.3, linetype = "dashed")+
+            ggplot2::geom_line(data = smooth, aes(x = Time, y = pred.fit), colour = "#615CFF", size = lwd+0.3, linetype = "dashed")+
             #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-            ggplot2::geom_ribbon(data = smooth, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#F8766D", alpha = 0.3)
+            ggplot2::geom_ribbon(data = smooth, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#615CFF", alpha = 0.3)
         }
         if(!isFALSE(input$GAM_AR1)) {
           p3 <- p3 +
-            ggplot2::geom_line(data = ar1, aes(x = Time, y = pred.fit), colour = "#7CAE00", size = lwd+0.3, linetype = "dashed")+
+            ggplot2::geom_line(data = ar1, aes(x = Time, y = pred.fit), colour = "#00BA38", size = lwd+0.3, linetype = "dashed")+
             #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-            ggplot2::geom_ribbon(data = ar1, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#7CAE00", alpha = 0.3)
+            ggplot2::geom_ribbon(data = ar1, aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "#00BA38", alpha = 0.3)
         }
         
         p3<- p3+
@@ -305,12 +305,25 @@ function(input, output){
         
         p3
         
-        
-        
+
         
         
   })
   
+  
+  
+  
+  output$aictable <- DT::renderDataTable(server = FALSE,{
+    ind <- ind()
+    gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
+    gam_smooth<- mgcv::gam(Value ~ s(Time), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+    gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
+    
+    aic.table <- data.frame(Model = c("GAM", "GAM_Smooth", "GAM_AR1"),
+                            AIC = c(AICcmodavg::AICc(gam_norm), AICcmodavg::AICc(gam_smooth), AICcmodavg::AICc(gam_ar1$lme)))
+
+    head(aic.table)
+  })
 
 
   output$tableout <- DT::renderDataTable(server = FALSE,{
@@ -334,7 +347,44 @@ function(input, output){
 
     })
 
+  
+  
+  
+  
+  output$residuals<- renderPlot({
+    
+    ind<- ind()
+    
+    gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
+    gam_smooth<- mgcv::gam(Value ~ s(Time), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+    gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
+    
+    new.dat<-data.frame(Time = ind$Time, # newdata
+                        Value = ind$Value) 
+    
+    norm<-  data.frame(Residuals = gam_norm$residuals) %>% 
+      dplyr::mutate(Time = ind$Time, 
+                    Model = c("gam")) 
+    
+    smooth<-  data.frame(Residuals = gam_smooth$residuals) %>% 
+      dplyr::mutate(Time = ind$Time, 
+                    Model = c("gam_smooth"))
+    
+    ar1<-  data.frame(Residuals = gam_ar1$gam$residuals) %>% 
+      dplyr::mutate(Time = ind$Time, 
+                    Model = c("gam_ar1"))
+    
+    resid<- rbind(norm, smooth, ar1)
+    
+    r<-resid %>% ggplot2::ggplot(aes(x=Time, y = Residuals, color = Model))+
+      ggplot2::geom_point()
 
+    r
+    
+  })
+    
+    
+    
   output$markdown <- renderUI({
     HTML(markdown::markdownToHTML(knit('documentation.rmd', quiet = TRUE)))
   })

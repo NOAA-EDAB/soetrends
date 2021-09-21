@@ -162,7 +162,7 @@ function(input, output){
    ind<- ind()
       
         gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-        gam_smooth<- mgcv::gam(Value ~ s(Time), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+        gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
         gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
         
         new.dat<-data.frame(Time = ind$Time, # newdata
@@ -316,7 +316,7 @@ function(input, output){
   output$aictable <- DT::renderDataTable(server = FALSE,{
     ind <- ind()
     gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-    gam_smooth<- mgcv::gam(Value ~ s(Time), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+    gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
     gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
     
     aic.table <- data.frame(Model = c("GAM", "GAM_Smooth", "GAM_AR1"),
@@ -356,34 +356,76 @@ function(input, output){
     ind<- ind()
     
     gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-    gam_smooth<- mgcv::gam(Value ~ s(Time), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+    gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
     gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
     
     new.dat<-data.frame(Time = ind$Time, # newdata
                         Value = ind$Value) 
     
-    norm<-  data.frame(Residuals = gam_norm$residuals) %>% 
+    norm<-  data.frame(fitted = fitted(gam_norm),
+                       resid = resid(gam_norm)) %>% 
       dplyr::mutate(Time = ind$Time, 
                     Model = c("gam")) 
     
-    smooth<-  data.frame(Residuals = gam_smooth$residuals) %>% 
+    smooth<-  data.frame(fitted = fitted(gam_smooth),
+                         resid = resid(gam_smooth)) %>% 
       dplyr::mutate(Time = ind$Time, 
                     Model = c("gam_smooth"))
     
-    ar1<-  data.frame(Residuals = gam_ar1$gam$residuals) %>% 
+    ar1<-  data.frame(fitted = fitted(gam_ar1$gam),
+                      resid = resid(gam_ar1$gam)) %>% 
       dplyr::mutate(Time = ind$Time, 
                     Model = c("gam_ar1"))
     
     resid<- rbind(norm, smooth, ar1)
     
-    r<-resid %>% ggplot2::ggplot(aes(x=Time, y = Residuals, color = Model))+
-      ggplot2::geom_point()
+    r<-resid %>% ggplot2::ggplot(aes(x=fitted, y = resid, color = Model))+
+      ggplot2::geom_point()+
+      ggplot2::stat_smooth(method = "lm")+
+      ggplot2::ggtitle("Plotted Residuals")
+
 
     r
     
   })
     
+  output$qqplot<- renderPlot({
     
+    ind<- ind()
+    
+    gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
+    gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
+    gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
+    
+    new.dat<-data.frame(Time = ind$Time, # newdata
+                        Value = ind$Value) 
+    
+    norm<-  data.frame(fitted = fitted(gam_norm),
+                       resid = resid(gam_norm)) %>% 
+      dplyr::mutate(Time = ind$Time, 
+                    Model = c("gam")) 
+    
+    smooth<-  data.frame(fitted = fitted(gam_smooth),
+                         resid = resid(gam_smooth)) %>% 
+      dplyr::mutate(Time = ind$Time, 
+                    Model = c("gam_smooth"))
+    
+    ar1<-  data.frame(fitted = fitted(gam_ar1$gam),
+                      resid = resid(gam_ar1$gam)) %>% 
+      dplyr::mutate(Time = ind$Time, 
+                    Model = c("gam_ar1"))
+    
+    resid<- rbind(norm, smooth, ar1)
+    
+    r<-resid %>% ggplot2::ggplot(aes(x=fitted, y = resid, color = Model))+
+      ggplot2::geom_point()+
+      ggplot2::stat_qq()+
+      ggplot2::ggtitle("Q-Q Plot")
+    
+    
+    r
+    
+  })
     
   output$markdown <- renderUI({
     HTML(markdown::markdownToHTML(knit('documentation.rmd', quiet = TRUE)))

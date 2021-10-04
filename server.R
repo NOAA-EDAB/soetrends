@@ -32,6 +32,13 @@ function(input, output){
   x.shade.min <- 2010
   x.shade.max <- 2020
   
+  ### AICc Function #####
+  AICc <- function(mod) {
+    K.c <- mod$rank
+    N.c <- length(mod$residuals)
+    AIC.c <- round(mod$aic + (2*K.c*(K.c+1)/(N.c-K.c-1)),3)
+    return(AIC.c)
+  }
   
   # Managed Revenue ###################
   ind<- reactive({ 
@@ -156,13 +163,7 @@ function(input, output){
   }
   })
   
-  ### AICc Function #####
-  AICc <- function(mod) {
-    K.c <- mod$rank
-    N.c <- length(mod$residuals)
-    AIC.c <- round(mod$aic + (2*K.c*(K.c+1)/(N.c-K.c-1)),3)
-    return(AIC.c)
-  }
+
   
   output$timeseries<- renderPlot({
     
@@ -193,7 +194,7 @@ function(input, output){
    lm1 <- lm(dev.resid~1)
    p.ac <- 1-pchisq(2*(logLik(lme1)[1]-logLik(lm1)[1]),2)    
    delta.GCV.gam.lm <- summary(gam1)$sp.criterion - summary(linear)$sp.criterion   #A negative value means the GAM with a smoother is a better model than the linear model  
-   delta.AIC.gam.lm <- AICc(gam1) - AICc(linear)                                   #A negative value means the GAM with a smoother is a better model than the linear model
+   delta.AIC.gam.lm <- AICcmodavg::AICc(gam1) - AICcmodavg::AICc(linear)                                   #A negative value means the GAM with a smoother is a better model than the linear model
    dev.diff.gam.lm <- summary(gam1)$dev.expl-summary(linear)$dev.expl
    
    #### Step 2: Fit GAMM to get selection criteria for relationships where p.ac < 0.05 (i.e. edf and AIC) and 
@@ -274,7 +275,7 @@ function(input, output){
    summary.gam1 <- as.data.frame(cbind("GAM",                          # Model name
                                        #resp.name,                       # Response variable
                                        #dri.name,                        # Pressure variable
-                                       AICc(gam1),                      # AICc
+                                       AICcmodavg::AICc(gam1),                      # AICc
                                        logLik(gam1),                    # Log likelihood
                                        summary(gam1)$dev.expl,          # deviance explained by gam
                                        summary(gam1)$edf,               # estimated degrees of freedom
@@ -293,7 +294,7 @@ function(input, output){
    summary.linear <- as.data.frame(cbind("Linear",                     # Model name
                                          #resp.name,                          # Response variable 
                                          #dri.name,                           # Pressure variable
-                                         AICc(linear),                       # AICc
+                                         AICcmodavg::AICc(linear),                       # AICc
                                          logLik(linear),                     # Log likelihood
                                          summary(linear)$dev.expl,           # deviance explained by linear model
                                          summary(linear)$residual.df,        # residual degrees of freedom
@@ -344,6 +345,9 @@ function(input, output){
                        summary.linear) 
   choseMod<- allSummary %>% dplyr::filter(allSummary$best.model == "yes")
    
+  new.dat<-data.frame(Time = ind$Time, # newdata
+                      Value = ind$Value) 
+  
    dat<- if(choseMod$MODEL == "GAM"){
     data.frame(pred = mgcv::predict.gam(gam1, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 

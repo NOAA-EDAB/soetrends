@@ -40,8 +40,11 @@ function(input, output){
     return(AIC.c)
   }
   
+  # input<-NULL
+  # input$Indicator<- "Revenue_Managed"
+  # input$epu_abbr<-"MAB"
   # Managed Revenue ###################
-  ind<- reactive({ 
+  dat<- reactive({ 
     if (input$Indicator == "Revenue_Managed") { 
     apex<-ecodata::hms_landings %>% 
       dplyr::filter(stringr::str_detect(Var, "Revenue")) %>% 
@@ -161,13 +164,10 @@ function(input, output){
   } else {
     ind <- message("No Data")
   }
-  })
   
-
-  
-  output$timeseries<- renderPlot({
     
-   ind<- ind()
+   #ind<- ind()
+   print(ind)
       
    sp.len <- 200 # Spline length
    nb <- 1000  # Number of bootstrap replicates
@@ -177,8 +177,8 @@ function(input, output){
    ks <- 4   #If ks=3, no relationships have edf values > 2.0
    rand <- rep(1,length(ind$Value))
    ts.length <- ind$Time
-   
-   
+   print(colnames(ind))
+   print(ts.length)
    #### Step 1: Fit GAM to answer whether temporal autocorrelation is important? Use the residuals 
    #### from the gam and a log likelihood ratio test to calculate the "P.ac" value. A significant p.ac 
    #### value suggests a model with autocorrelated error structure explains more of the variation in the
@@ -375,7 +375,7 @@ function(input, output){
    } else(print("No Model"))
    
 
-   
+  })
    
    
    #######################################################################################################################################
@@ -452,8 +452,8 @@ function(input, output){
         #  p2
 
         #########################################################################################################################
-        
-        
+   output$timeseries<- renderPlot({ 
+        dat<- dat()
         ### New plot
         p3<- dat %>% 
           ggplot2::ggplot()+

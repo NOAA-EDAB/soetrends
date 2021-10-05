@@ -44,7 +44,7 @@ function(input, output){
   # input$Indicator<- "Revenue_Managed"
   # input$epu_abbr<-"MAB"
   # Managed Revenue ###################
-  dat<- observe({ 
+  dat <- reactive({ 
     if (input$Indicator == "Revenue_Managed") { 
     apex<-ecodata::hms_landings %>% 
       dplyr::filter(stringr::str_detect(Var, "Revenue")) %>% 
@@ -165,9 +165,10 @@ function(input, output){
     ind <- message("No Data")
   }
   
-    
+  #})
+  
+  #dat<- reactive({
    #ind<- ind()
-   print(ind)
       
    sp.len <- 200 # Spline length
    nb <- 1000  # Number of bootstrap replicates
@@ -176,8 +177,8 @@ function(input, output){
    dif2 <- 2 # Second derivative
    ks <- 4   #If ks=3, no relationships have edf values > 2.0
    rand <- rep(1,length(ind$Value))
-   ts.length <- ind$Time
-   
+   #ts.length <- ind$Time
+   print(rand)
    #print(ts.length)
    #### Step 1: Fit GAM to answer whether temporal autocorrelation is important? Use the residuals 
    #### from the gam and a log likelihood ratio test to calculate the "P.ac" value. A significant p.ac 
@@ -190,13 +191,13 @@ function(input, output){
    gam1  <- mgcv::gam(Value ~ s(Time, bs= "tp",k = ks), optimMmethod="GCV.Cp",se = T, data = ind)
    linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
    dev.resid <- residuals(gam1,type='deviance')
-   lme1 <- nlme::lme(dev.resid~1,random=~1|rand,correlation=nlme::corAR1(form=~ts.length),method='ML')
+   lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
    lm1 <- lm(dev.resid~1)
    p.ac <- 1-pchisq(2*(logLik(lme1)[1]-logLik(lm1)[1]),2)    
    delta.GCV.gam.lm <- summary(gam1)$sp.criterion - summary(linear)$sp.criterion   #A negative value means the GAM with a smoother is a better model than the linear model  
    delta.AIC.gam.lm <- AICcmodavg::AICc(gam1) - AICcmodavg::AICc(linear)                                   #A negative value means the GAM with a smoother is a better model than the linear model
    dev.diff.gam.lm <- summary(gam1)$dev.expl-summary(linear)$dev.expl
-   print(ts.length)
+   #print(ts.length)
    #### Step 2: Fit GAMM to get selection criteria for relationships where p.ac < 0.05 (i.e. edf and AIC) and 
    #### calculate deviance explained by GAMM ("gamm.dev.expl" below)
   # try(gamm <- mgcv::gamm(Value ~ s(Time, bs= "tp",k = ks), data = ind, optimMmethod="GCV.Cp",
@@ -205,7 +206,7 @@ function(input, output){
    #{
      #print(imod)
    gamm<- mgcv::gamm(Value ~ s(Time, bs= "tp",k = ks), data = ind, optimMmethod="GCV.Cp",
-                                       se = T,correlation=nlme::corAR1(form=~ts.length))  
+                                       se = T,correlation=nlme::corAR1(form=~Time))  
    
    #gamm <- mgcv::gamm(Value ~ s(Time),se = T, data = ind, correlation=nlme::corAR1(form=~ts.length))
    #}
@@ -219,12 +220,12 @@ function(input, output){
    
    #Step 3. Fit linear model with autocorrelation (LMAC) to get selection criteria (i.e. AIC) and calculate deviance explained by LMAC ("lmac.dev.expl" below).
    try(lmac <- mgcv::gamm(Value ~ Time, optimMmethod="GCV.Cp", data = ind,
-                    se = T,random=list(rand=~1),correlation=nlme::corAR1(form=~ts.length)))
+                    se = T,random=list(rand=~1),correlation=nlme::corAR1(form=~Time)))
    if (length(lmac)==0) 
    {
      #print(imod)
      lmac <- mgcv::gamm(Value ~ Time,random=list(rand=~1),se = T,
-                  correlation=nlme::corAR1(form=~ts.length), data = ind)
+                  correlation=nlme::corAR1(form=~Time), data = ind)
    }  
    dr2 <- sum(residuals(lmac$gam)^2)
    lmac.dev.expl <- (dn0-dr2)/dn0

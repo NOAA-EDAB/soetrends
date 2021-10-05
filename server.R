@@ -44,7 +44,7 @@ function(input, output){
   # input$Indicator<- "Revenue_Managed"
   # input$epu_abbr<-"MAB"
   # Managed Revenue ###################
-  dat<- reactive({ 
+  dat<- observe({ 
     if (input$Indicator == "Revenue_Managed") { 
     apex<-ecodata::hms_landings %>% 
       dplyr::filter(stringr::str_detect(Var, "Revenue")) %>% 
@@ -177,8 +177,8 @@ function(input, output){
    ks <- 4   #If ks=3, no relationships have edf values > 2.0
    rand <- rep(1,length(ind$Value))
    ts.length <- ind$Time
-   print(colnames(ind))
-   print(ts.length)
+   
+   #print(ts.length)
    #### Step 1: Fit GAM to answer whether temporal autocorrelation is important? Use the residuals 
    #### from the gam and a log likelihood ratio test to calculate the "P.ac" value. A significant p.ac 
    #### value suggests a model with autocorrelated error structure explains more of the variation in the
@@ -196,16 +196,19 @@ function(input, output){
    delta.GCV.gam.lm <- summary(gam1)$sp.criterion - summary(linear)$sp.criterion   #A negative value means the GAM with a smoother is a better model than the linear model  
    delta.AIC.gam.lm <- AICcmodavg::AICc(gam1) - AICcmodavg::AICc(linear)                                   #A negative value means the GAM with a smoother is a better model than the linear model
    dev.diff.gam.lm <- summary(gam1)$dev.expl-summary(linear)$dev.expl
-   
+   print(ts.length)
    #### Step 2: Fit GAMM to get selection criteria for relationships where p.ac < 0.05 (i.e. edf and AIC) and 
    #### calculate deviance explained by GAMM ("gamm.dev.expl" below)
-   try(gamm <- mgcv::gamm(Value ~ s(Time, bs= "tp",k = ks), data = ind, optimMmethod="GCV.Cp",
-                    se = T,correlation=nlme::corAR1(form=~ts.length)))
-   if (length(gamm)==0)
-   {
+  # try(gamm <- mgcv::gamm(Value ~ s(Time, bs= "tp",k = ks), data = ind, optimMmethod="GCV.Cp",
+  #                  se = T,correlation=nlme::corAR1(form=~ind$Time)))
+   #if (length(gamm)==0)
+   #{
      #print(imod)
-     gamm <- gamm(Value ~ s(Time),se = T,correlation=corAR1(form=~ts.length), data = ind)
-   }
+   gamm<- mgcv::gamm(Value ~ s(Time, bs= "tp",k = ks), data = ind, optimMmethod="GCV.Cp",
+                                       se = T,correlation=nlme::corAR1(form=~ts.length))  
+   
+   #gamm <- mgcv::gamm(Value ~ s(Time),se = T, data = ind, correlation=nlme::corAR1(form=~ts.length))
+   #}
    #Fit null model to compute deviance explained by gamm
    null  <- MASS::glmmPQL(Value ~ 1,random=list(rand=~1),family='gaussian', data = ind)  
    dr <- sum(residuals(gamm$gam)^2)

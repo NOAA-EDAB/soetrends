@@ -40,11 +40,9 @@ function(input, output){
     return(AIC.c)
   }
   
-  # input<-NULL
-  # input$Indicator<- "Revenue_Managed"
-  # input$epu_abbr<-"MAB"
-  # Managed Revenue ###################
-  dat <- reactive({ 
+  ############### SELECT INDICATOR ################################
+  ind <- observeEvent(c(input$epu_abbr, input$Indicator),{ 
+    # Managed Revenue ###################
     if (input$Indicator == "Revenue_Managed") { 
     apex<-ecodata::hms_landings %>% 
       dplyr::filter(stringr::str_detect(Var, "Revenue")) %>% 
@@ -165,20 +163,22 @@ function(input, output){
     ind <- message("No Data")
   }
   
-  #})
+  })
   
-  #dat<- reactive({
-   #ind<- ind()
-      
-   sp.len <- 200 # Spline length
-   nb <- 1000  # Number of bootstrap replicates
-   gam.mat <- matrix(nrow=sp.len, ncol=nb) ## create a matrix to be filled with bootstrapped splines (200 x 1000)
-   dif1 <- 1 # First derivative
-   dif2 <- 2 # Second derivative
-   ks <- 4   #If ks=3, no relationships have edf values > 2.0
-   rand <- rep(1,length(ind$Value))
+  
+  ##################### RUN MODEL AND MODEL SELECTION ###########
+  dat<- reactive({
+    ind<- ind()
+   
+    sp.len <- 200 # Spline length
+    nb <- 1000  # Number of bootstrap replicates
+    gam.mat <- matrix(nrow=sp.len, ncol=nb) ## create a matrix to be filled with bootstrapped splines (200 x 1000)
+    dif1 <- 1 # First derivative
+    dif2 <- 2 # Second derivative
+    ks <- 4   #If ks=3, no relationships have edf values > 2.0
+    rand <- rep(1,length(ind$Value))
    #ts.length <- ind$Time
-   print(rand)
+   #print(rand)
    #print(ts.length)
    #### Step 1: Fit GAM to answer whether temporal autocorrelation is important? Use the residuals 
    #### from the gam and a log likelihood ratio test to calculate the "P.ac" value. A significant p.ac 
@@ -189,9 +189,12 @@ function(input, output){
    #### the model and provide selection criteria (i.e. edf, GCV and AIC scores from GAM and Linear model (linear) to compare)
    
    gam1  <- mgcv::gam(Value ~ s(Time, bs= "tp",k = ks), optimMmethod="GCV.Cp",se = T, data = ind)
+   print(gam1)
    linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
-   dev.resid <- residuals(gam1,type='deviance')
-   lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
+   #dev.resid <- stats::residuals(gam1,type='deviance')
+   #print(dev.resid)
+   lme1 <- nlme::lme(stats::residuals(gam1,type='deviance')~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
+   #lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
    lm1 <- lm(dev.resid~1)
    p.ac <- 1-pchisq(2*(logLik(lme1)[1]-logLik(lm1)[1]),2)    
    delta.GCV.gam.lm <- summary(gam1)$sp.criterion - summary(linear)$sp.criterion   #A negative value means the GAM with a smoother is a better model than the linear model  
@@ -456,8 +459,12 @@ function(input, output){
         #  p2
 
         #########################################################################################################################
+   
+  
+  ############## TIMESERIES PLOT ###################
    output$timeseries<- renderPlot({ 
         dat<- dat()
+    
         ### New plot
         p3<- dat %>% 
           ggplot2::ggplot()+
@@ -484,20 +491,6 @@ function(input, output){
         
   })
   
-  
-  
-  
-  output$aictable <- DT::renderDataTable(server = FALSE,{
-   #ind <- ind()
-    # gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-    # gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
-    # gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
-    # 
-    # aic.table <- data.frame(Model = c("GAM", "GAM_Smooth", "GAM_AR1"),
-    #                         AIC = c(AICcmodavg::AICc(gam_norm), AICcmodavg::AICc(gam_smooth), AICcmodavg::AICc(gam_ar1$lme)))
-    # 
-    # head(aic.table)
-  })
 
 
   output$tableout <- DT::renderDataTable(server = FALSE,{
@@ -521,91 +514,17 @@ function(input, output){
 
     })
 
-  
-  
-  
-  
-  output$residuals<- renderPlot({
-    
-    # ind<- ind()
-    # 
-    # gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-    # gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
-    # gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
-    # 
-    # new.dat<-data.frame(Time = ind$Time, # newdata
-    #                     Value = ind$Value) 
-    # 
-    # norm<-  data.frame(fitted = fitted(gam_norm),
-    #                    resid = resid(gam_norm)) %>% 
-    #   dplyr::mutate(Time = ind$Time, 
-    #                 Model = c("gam")) 
-    # 
-    # smooth<-  data.frame(fitted = fitted(gam_smooth),
-    #                      resid = resid(gam_smooth)) %>% 
-    #   dplyr::mutate(Time = ind$Time, 
-    #                 Model = c("gam_smooth"))
-    # 
-    # ar1<-  data.frame(fitted = fitted(gam_ar1$gam),
-    #                   resid = resid(gam_ar1$gam)) %>% 
-    #   dplyr::mutate(Time = ind$Time, 
-    #                 Model = c("gam_ar1"))
-    # 
-    # resid<- rbind(norm, smooth, ar1)
-    # 
-    # r<-resid %>% ggplot2::ggplot(aes(x=fitted, y = resid, color = Model))+
-    #   ggplot2::geom_point()+
-    #   ggplot2::stat_smooth(method = "lm")+
-    #   ggplot2::ggtitle("Plotted Residuals")
-    # 
-    # 
-    # r
-    
-  })
-    
-  output$qqplot<- renderPlot({
-    
-    # ind<- ind()
-    # 
-    # gam_norm<- mgcv::gam(Value ~ s(Time), data = ind, na.action = na.omit) # calc gam
-    # gam_smooth<- mgcv::gam(Value ~ s(Time, sp = 1000), bs = "ts", data = ind, na.action = na.omit) # calc gam with a smoother
-    # gam_ar1 <- mgcv::gamm(Value ~s(Time), correlation = nlme::corAR1(form = ~Time), data = ind, na.action = na.omit) #calc gam with ar1
-    # 
-    # new.dat<-data.frame(Time = ind$Time, # newdata
-    #                     Value = ind$Value) 
-    # 
-    # norm<-  data.frame(fitted = fitted(gam_norm),
-    #                    resid = resid(gam_norm)) %>% 
-    #   dplyr::mutate(Time = ind$Time, 
-    #                 Model = c("gam")) 
-    # 
-    # smooth<-  data.frame(fitted = fitted(gam_smooth),
-    #                      resid = resid(gam_smooth)) %>% 
-    #   dplyr::mutate(Time = ind$Time, 
-    #                 Model = c("gam_smooth"))
-    # 
-    # ar1<-  data.frame(fitted = fitted(gam_ar1$gam),
-    #                   resid = resid(gam_ar1$gam)) %>% 
-    #   dplyr::mutate(Time = ind$Time, 
-    #                 Model = c("gam_ar1"))
-    # 
-    # resid<- rbind(norm, smooth, ar1)
-    # 
-    # r<-resid %>% ggplot2::ggplot(aes(x=fitted, y = resid, color = Model))+
-    #   ggplot2::geom_point()+
-    #   ggplot2::stat_qq()+
-    #   ggplot2::ggtitle("Q-Q Plot")
-    # 
-    # 
-    # r
-    
-  })
     
   output$markdown <- renderUI({
     HTML(markdown::markdownToHTML(knit('documentation.rmd', quiet = TRUE)))
   })
 
-  #output$markdown <- renderUI({
-  #  HTML(markdown::markdownToHTML(knit('stat_summary.rmd', quiet = TRUE)))
-  #})
 })
+
+
+
+
+
+
+
+

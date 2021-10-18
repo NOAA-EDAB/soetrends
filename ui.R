@@ -27,25 +27,6 @@ shinyUI(
                                                                                "Heatwave_Maximum_Intensity" = "Heatwave_Maximum_Intensity",
                                                                                "LTSST"="LTSST"),
                   selected = "LTSST",multiple = F),
-
-      # checkboxInput("GAM_Norm",label="GAM",value = TRUE),
-      # checkboxInput("GAM_Smooth",label="GAM_smooth",value = TRUE),
-      # checkboxInput("GAM_AR1",label="GAM_AR1",value = TRUE),
-
-      # sliderInput(inputId = "knots",
-      #             label = "Number of knots:",
-      #             min = 0,
-      #             max = 30,
-      #             value = 3,
-      #             step = 1),
-      # 
-      # sliderInput(inputId = "gamma",
-      #             label = "Smoother Function:",
-      #             min = 0,
-      #             max = 10,
-      #             value = 1,
-      #             step = 0.01)#, 
-     # downloadButton('download',"Download the data")
     ),
 
     # Main panel for displaying outputs ----

@@ -152,7 +152,7 @@ function(input, output){
   ##################### RUN MODEL AND MODEL SELECTION ###########
   dat<- reactive({
     ind<- ind()
-    print(ind)
+    #print(ind)
    
     sp.len <- 200 # Spline length
     nb <- 1000  # Number of bootstrap replicates
@@ -160,7 +160,11 @@ function(input, output){
     dif1 <- 1 # First derivative
     dif2 <- 2 # Second derivative
     ks <- 4   #If ks=3, no relationships have edf values > 2.0
-    rand <- rep(1,length(ind$Value))
+    #rand <- rep(1,length(ind$Value))  
+    
+    rand <- data.frame(rep(1,length(ind$Value))) %>%
+      dplyr::rename("rand" = "rep.1..length.ind.Value..")
+    ind<- ind %>% cbind(rand)
    #ts.length <- ind$Time
    #print(rand)
    #print(ts.length)
@@ -173,14 +177,16 @@ function(input, output){
    #### the model and provide selection criteria (i.e. edf, GCV and AIC scores from GAM and Linear model (linear) to compare)
    
    gam1  <- mgcv::gam(Value ~ s(Time, bs= "tp",k = ks), optimMmethod="GCV.Cp",se = T, data = ind)
-   print(gam1)
+   #print(gam1)
    linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
-   dev.resid <- data.frame(stats::residuals(gam1,type='deviance'))
-   print(dev.resid)
+   dev.resid <- data.frame(stats::residuals(gam1,type='deviance')) %>% 
+     dplyr::rename("dev.resid" = "stats..residuals.gam1..type....deviance..")
+   ind<- ind %>% cbind(dev.resid)
+   
    lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),
                      correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
    #lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
-   lm1 <- lm(dev.resid~1)
+   lm1 <- lm(ind$dev.resid~1)
    p.ac <- 1-pchisq(2*(logLik(lme1)[1]-logLik(lm1)[1]),2)    
    delta.GCV.gam.lm <- summary(gam1)$sp.criterion - summary(linear)$sp.criterion   #A negative value means the GAM with a smoother is a better model than the linear model  
    delta.AIC.gam.lm <- AICcmodavg::AICc(gam1) - AICcmodavg::AICc(linear)                                   #A negative value means the GAM with a smoother is a better model than the linear model
@@ -207,14 +213,16 @@ function(input, output){
    
    
    #Step 3. Fit linear model with autocorrelation (LMAC) to get selection criteria (i.e. AIC) and calculate deviance explained by LMAC ("lmac.dev.expl" below).
-   try(lmac <- mgcv::gamm(Value ~ Time, optimMmethod="GCV.Cp", data = ind,
-                    se = T,random=list(rand=~1),correlation=nlme::corAR1(form=~Time)))
-   if (length(lmac)==0) 
-   {
+    # try(lmac <- mgcv::gamm(Value ~ Time, optimMmethod="GCV.Cp", data = ind,
+    #                  se = T,random=list(rand=~1),correlation=nlme::corAR1(form=~Time)))
+    # if (length(lmac)==0) 
+    # {
      #print(imod)
-     lmac <- mgcv::gamm(Value ~ Time,random=list(rand=~1),se = T,
-                  correlation=nlme::corAR1(form=~Time), data = ind)
-   }  
+   lmac <- mgcv::gamm(Value ~ Time,random=list(rand=~1), se = T,
+                      correlation=nlme::corAR1(form=~Time), data = ind)
+   # lmac <- mgcv::gamm(Value ~ Time,random=list(rand=~1),se = T,
+   #                    correlation=nlme::corAR1(form=~Time), data = ind)
+    # }  
    dr2 <- sum(residuals(lmac$gam)^2)
    lmac.dev.expl <- (dn0-dr2)/dn0
    
@@ -336,7 +344,7 @@ function(input, output){
    allSummary <- rbind(allSummary, summary.gamm, summary.lmac, summary.gam1,
                        summary.linear) 
   choseMod<- allSummary %>% dplyr::filter(allSummary$best.model == "yes")
-   
+  #print(choseMod)
   new.dat<-data.frame(Time = ind$Time, # newdata
                       Value = ind$Value) 
   
@@ -345,28 +353,108 @@ function(input, output){
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
-                     lower = pred.fit - pred.se.fit)
+                     lower = pred.fit - pred.se.fit, 
+                     choseMod = c("GAM"))
    } else if(choseMod$MODEL == "Linear"){
      data.frame(pred = predict(linear, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
-                     lower = pred.fit - pred.se.fit)
+                     lower = pred.fit - pred.se.fit, 
+                     choseMod = c("Linear"))
    } else if(choseMod$MODEL == "GAMM"){
      data.frame(pred = mgcv::predict.gam(gamm$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
-                     lower = pred.fit - pred.se.fit)
+                     lower = pred.fit - pred.se.fit, 
+                     choseMod = c("GAMM"))
    } else if(choseMod$MODEL == "LMAC"){
      data.frame(pred = mgcv::predict.gam(lmac$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
-                     lower = pred.fit - pred.se.fit)
+                     lower = pred.fit - pred.se.fit, 
+                     choseMod = c("LMAC"))
    } else(print("No Model"))
-   
 
+   ## calc deriv
+   # fm1 <- gratia::derivatives(dat$pred.fit)
+   # 
+   #   trend <- fm1 %>%
+   #      mutate(upper_bound = ifelse(upper < 0,
+   #                                  "upper", "NA"),
+   #             lower_bound = ifelse(lower > 0,
+   #                                 "lower", "NA")) %>%
+   #     mutate(Time = round(data)) %>%
+   #     group_by(Time) %>%
+   #     slice(1) %>%
+   #    ungroup() %>%
+   #     select(Time, upper_bound, lower_bound)
+   #  
+   #     # Add second deriv
+   #   inflection <- rle(as.vector(fm1$derivative))
+    
+   #  ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
+   #    dplyr::mutate(Time = ind$Time) %>%
+   #    left_join(ind) %>% # join with orig data set
+   #    dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci
+   #                  lower = pred.fit - pred.se.fit)
+   # 
+   # 
+   #  ind3<- ind2 %>% left_join(trend) %>%
+   #    mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
+   #                           upper_bound == "NA" & lower_bound == "lower" ~ 0,
+   #                           upper_bound == "NA" & lower_bound == "NA" ~ -1))
+   # 
+   #  ## Andy's loop-
+   #  catlabel <- 1
+   #  df<- ind3 %>% select(Time, cat2) %>%
+   #    mutate(change = cat2,
+   #            cat = NA)
+   #  for (irow in 1:nrow(df)) {
+   #    #print(irow)
+   #    if (irow == 1) {
+   #    df$cat[1] <- catlabel
+   #      next
+   #    }
+   # 
+   #    if ((df$change[irow]-df$change[irow-1]) == 0) {
+   #    } else {
+   #      catlabel=catlabel + 1
+   #    }
+   #    df$cat[irow] <- catlabel
+   #    #
+   #  }
+   # 
+   #  ind3<- ind3 %>% left_join(df) %>%
+   #    mutate(cat = as.character(cat),
+   #           cat2 = as.character(cat2))
+   # ### Plot
+   #  p2 <- ind3 %>%
+   #    ggplot2::ggplot()+
+   #    ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
+   #    ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
+   #    ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
+   #    ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
+   #    scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+   #    ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
+   #    ggplot2::ylab(("Value")) +
+   #    ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
+   #    ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
+   #    ggplot2::theme(axis.title.y = element_text(size = 10),
+   #                   axis.title.x = element_text(size = 15),
+   #                   legend.position = "none")+
+   #    ecodata::theme_ts()+
+   #    ecodata::theme_title()
+   #  p2
+   
+   
+   
+   
+   
+   
+   
   })
    
    
@@ -448,7 +536,10 @@ function(input, output){
   
   ############## TIMESERIES PLOT ###################
    output$timeseries<- renderPlot({ 
-     
+     print("before dat read")
+     dat <- dat()
+     print("after dat read")
+     class(dat)
      shade.alpha <- 0.3
      shade.fill <- "lightgrey"
      lwd <- 1
@@ -466,26 +557,26 @@ function(input, output){
      x.shade.min <- 2010
      x.shade.max <- 2020
      
-     dat<- dat()
+     
     
       ### New plot
      p3<- dat %>% 
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-          ecodata::geom_gls(data = ind, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-          ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+0.3, linetype = "dashed")+
-          #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
-          #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-          #ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
-          ggplot2::ylab(("Value")) +
-          ggplot2::xlab(paste("Model = ", choseMod))+
-          ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
-          ggplot2::theme(axis.title.y = element_text(size = 10), 
-                         axis.title.x = element_text(size = 15), 
-                         legend.position = "none")+
-          ecodata::theme_ts()+
-          ecodata::theme_title()
+          ecodata::geom_gls(aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
+           ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+0.3, linetype = "dashed")+
+          # #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
+          # #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+          # #ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
+           ggplot2::ylab(("Value")) +
+           ggplot2::xlab(paste("Model = ", dat$choseMod))+
+           ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
+           ggplot2::theme(axis.title.y = element_text(size = 10), 
+                          axis.title.x = element_text(size = 15), 
+                          legend.position = "none")+
+           ecodata::theme_ts()+
+           ecodata::theme_title()
          
       p3
  })

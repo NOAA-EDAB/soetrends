@@ -15,23 +15,6 @@ function(input, output){
   library(knitr)
   library(DT)
   
-  shade.alpha <- 0.3
-  shade.fill <- "lightgrey"
-  lwd <- 1
-  pcex <- 2
-  trend.alpha <- 0.5
-  trend.size <- 2
-  hline.size <- 1
-  hline.alpha <- 0.35
-  hline.lty <- "dashed"
-  label.size <- 5
-  hjust.label <- 1.5
-  letter_size <- 4
-  feeding.guilds1<- c("Piscivore","Planktivore","Benthivore","Benthos")
-  feeding.guilds <- c("Apex Predator","Piscivore","Planktivore","Benthivore","Benthos")
-  x.shade.min <- 2010
-  x.shade.max <- 2020
-  
   ### AICc Function #####
   AICc <- function(mod) {
     K.c <- mod$rank
@@ -41,7 +24,7 @@ function(input, output){
   }
   
   ############### SELECT INDICATOR ################################
-  ind <- observeEvent(c(input$epu_abbr, input$Indicator),{ 
+  ind <- reactive({ 
     # Managed Revenue ###################
     if (input$Indicator == "Revenue_Managed") { 
     apex<-ecodata::hms_landings %>% 
@@ -169,6 +152,7 @@ function(input, output){
   ##################### RUN MODEL AND MODEL SELECTION ###########
   dat<- reactive({
     ind<- ind()
+    print(ind)
    
     sp.len <- 200 # Spline length
     nb <- 1000  # Number of bootstrap replicates
@@ -191,9 +175,10 @@ function(input, output){
    gam1  <- mgcv::gam(Value ~ s(Time, bs= "tp",k = ks), optimMmethod="GCV.Cp",se = T, data = ind)
    print(gam1)
    linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
-   #dev.resid <- stats::residuals(gam1,type='deviance')
-   #print(dev.resid)
-   lme1 <- nlme::lme(stats::residuals(gam1,type='deviance')~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
+   dev.resid <- data.frame(stats::residuals(gam1,type='deviance'))
+   print(dev.resid)
+   lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),
+                     correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
    #lme1 <- nlme::lme(dev.resid~1,random=~1|rep(1,length(Value)),correlation=nlme::corAR1(form=~Time),method='ML', data = ind)
    lm1 <- lm(dev.resid~1)
    p.ac <- 1-pchisq(2*(logLik(lme1)[1]-logLik(lm1)[1]),2)    
@@ -463,10 +448,28 @@ function(input, output){
   
   ############## TIMESERIES PLOT ###################
    output$timeseries<- renderPlot({ 
-        dat<- dat()
+     
+     shade.alpha <- 0.3
+     shade.fill <- "lightgrey"
+     lwd <- 1
+     pcex <- 2
+     trend.alpha <- 0.5
+     trend.size <- 2
+     hline.size <- 1
+     hline.alpha <- 0.35
+     hline.lty <- "dashed"
+     label.size <- 5
+     hjust.label <- 1.5
+     letter_size <- 4
+     feeding.guilds1<- c("Piscivore","Planktivore","Benthivore","Benthos")
+     feeding.guilds <- c("Apex Predator","Piscivore","Planktivore","Benthivore","Benthos")
+     x.shade.min <- 2010
+     x.shade.max <- 2020
+     
+     dat<- dat()
     
-        ### New plot
-        p3<- dat %>% 
+      ### New plot
+     p3<- dat %>% 
           ggplot2::ggplot()+
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
@@ -484,12 +487,8 @@ function(input, output){
           ecodata::theme_ts()+
           ecodata::theme_title()
          
-        p3
-        
-
-        
-        
-  })
+      p3
+ })
   
 
 

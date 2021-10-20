@@ -177,6 +177,8 @@ function(input, output){
    ks <- 4   #If ks=3, no relationships have edf values > 2.0
    rand <- rep(1,length(ind$Value))
    ts.length <- ind$Time
+  
+   #ts.length <- 2000
    
    
    #### Step 1: Fit GAM to answer whether temporal autocorrelation is important? Use the residuals 

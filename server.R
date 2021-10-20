@@ -349,197 +349,107 @@ function(input, output){
                       Value = ind$Value) 
   
    dat<- if(choseMod$MODEL == "GAM"){
-    data.frame(pred = mgcv::predict.gam(gam1, new.dat, se.fit = TRUE)) %>% # calc predicted values
+    dat<- data.frame(pred = mgcv::predict.gam(gam1, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                      lower = pred.fit - pred.se.fit, 
                      choseMod = c("GAM"))
+    fm1 <- gratia::derivatives(gam1)
+    trend <- fm1 %>%
+      mutate(upper_bound = ifelse(upper < 0,
+                                  "upper", "NA"),
+             lower_bound = ifelse(lower > 0,
+                                  "lower", "NA")) %>%
+      mutate(Time = round(data)) %>%
+      group_by(Time) %>%
+      slice(1) %>%
+      ungroup() %>%
+      select(Time, upper_bound, lower_bound)
+    dat<- dat %>% left_join(trend) %>% 
+      mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
+                              upper_bound == "NA" & lower_bound == "lower" ~ 0,
+                              upper_bound == "NA" & lower_bound == "NA" ~ -1))
    } else if(choseMod$MODEL == "Linear"){
-     data.frame(pred = predict(linear, new.dat, se.fit = TRUE)) %>% # calc predicted values
+     dat<- data.frame(pred = predict(linear, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                      lower = pred.fit - pred.se.fit, 
-                     choseMod = c("Linear"))
+                     choseMod = c("Linear"), 
+                     upper_bound = c("upper"),
+                     lower_bound = c("lower")) %>% 
+       dplyr::mutate(cat2 = case_when(upper_bound == "upper" ~ 0,
+                                      lower_bound == "lower" ~ 1,
+                                      upper_bound == "NA" & lower_bound == "NA" ~ -1))
    } else if(choseMod$MODEL == "GAMM"){
-     data.frame(pred = mgcv::predict.gam(gamm$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
+     dat <- data.frame(pred = mgcv::predict.gam(gamm$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                      lower = pred.fit - pred.se.fit, 
                      choseMod = c("GAMM"))
+     fm1 <- gratia::derivatives(gamm$gam)
+     trend <- fm1 %>%
+       mutate(upper_bound = ifelse(upper < 0,"upper", "NA"),
+              lower_bound = ifelse(lower > 0,"lower", "NA")) %>%
+       mutate(Time = round(data)) %>%
+       group_by(Time) %>%
+       slice(1) %>%
+       ungroup() %>%
+       select(Time, upper_bound, lower_bound)
+     dat<- dat %>% left_join(trend) %>% 
+       mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
+                               upper_bound == "NA" & lower_bound == "lower" ~ 0,
+                               upper_bound == "NA" & lower_bound == "NA" ~ -1))
    } else if(choseMod$MODEL == "LMAC"){
-     data.frame(pred = mgcv::predict.gam(lmac$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
+     dat<- data.frame(pred = mgcv::predict.gam(lmac$gam, new.dat, se.fit = TRUE)) %>% # calc predicted values
        dplyr::mutate(Time = ind$Time) %>% 
        left_join(ind) %>% # join with orig data set
        dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                      lower = pred.fit - pred.se.fit, 
-                     choseMod = c("LMAC"))
+                     choseMod = c("LMAC"), 
+                     upper_bound = c("upper"),
+                     lower_bound = c("lower")) %>% 
+       dplyr::mutate(cat2 = case_when(upper_bound == "upper" ~ 0,
+                                      lower_bound == "lower" ~ 1,
+                                      upper_bound == "NA" & lower_bound == "NA" ~ -1))
    } else(print("No Model"))
 
-   ## calc deriv
-   # fm1 <- gratia::derivatives(dat$pred.fit)
-   # 
-   #   trend <- fm1 %>%
-   #      mutate(upper_bound = ifelse(upper < 0,
-   #                                  "upper", "NA"),
-   #             lower_bound = ifelse(lower > 0,
-   #                                 "lower", "NA")) %>%
-   #     mutate(Time = round(data)) %>%
-   #     group_by(Time) %>%
-   #     slice(1) %>%
-   #    ungroup() %>%
-   #     select(Time, upper_bound, lower_bound)
-   #  
-   #     # Add second deriv
-   #   inflection <- rle(as.vector(fm1$derivative))
-    
-   #  ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
-   #    dplyr::mutate(Time = ind$Time) %>%
-   #    left_join(ind) %>% # join with orig data set
-   #    dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci
-   #                  lower = pred.fit - pred.se.fit)
-   # 
-   # 
-   #  ind3<- ind2 %>% left_join(trend) %>%
-   #    mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
-   #                           upper_bound == "NA" & lower_bound == "lower" ~ 0,
-   #                           upper_bound == "NA" & lower_bound == "NA" ~ -1))
-   # 
-   #  ## Andy's loop-
-   #  catlabel <- 1
-   #  df<- ind3 %>% select(Time, cat2) %>%
-   #    mutate(change = cat2,
-   #            cat = NA)
-   #  for (irow in 1:nrow(df)) {
-   #    #print(irow)
-   #    if (irow == 1) {
-   #    df$cat[1] <- catlabel
-   #      next
-   #    }
-   # 
-   #    if ((df$change[irow]-df$change[irow-1]) == 0) {
-   #    } else {
-   #      catlabel=catlabel + 1
-   #    }
-   #    df$cat[irow] <- catlabel
-   #    #
-   #  }
-   # 
-   #  ind3<- ind3 %>% left_join(df) %>%
-   #    mutate(cat = as.character(cat),
-   #           cat2 = as.character(cat2))
-   # ### Plot
-   #  p2 <- ind3 %>%
-   #    ggplot2::ggplot()+
-   #    ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
-   #    ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-   #    ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-   #    ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
-   #    scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-   #    ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
-   #    ggplot2::ylab(("Value")) +
-   #    ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
-   #    ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
-   #    ggplot2::theme(axis.title.y = element_text(size = 10),
-   #                   axis.title.x = element_text(size = 15),
-   #                   legend.position = "none")+
-   #    ecodata::theme_ts()+
-   #    ecodata::theme_title()
-   #  p2
-   
-   
-   
-   
-   
-   
-   
+   ###### Andy's loop-
+     catlabel <- 1
+     df<- dat %>% select(Time, cat2) %>%
+       mutate(change = cat2,
+               cat = NA)
+     for (irow in 1:nrow(df)) {
+       #print(irow)
+       if (irow == 1) {
+       df$cat[1] <- catlabel
+         next
+      }
+
+      if ((df$change[irow]-df$change[irow-1]) == 0) {
+      } else {
+        catlabel=catlabel + 1
+      }
+      df$cat[irow] <- catlabel
+      #
+    }
+
+    dat<- dat%>% left_join(df) %>%
+      mutate(cat = as.character(cat),
+             cat2 = as.character(cat2))
+
   })
    
    
-   #######################################################################################################################################
-        
-         ## calc deriv
-         #fm1 <- gratia::derivatives(dat$pred.fit)
-      
-        #  trend <- fm1 %>%
-        #     mutate(upper_bound = ifelse(upper < 0,
-        #                                 "upper", "NA"),
-        #            lower_bound = ifelse(lower > 0,
-        #                                "lower", "NA")) %>%
-        #    mutate(Time = round(data)) %>%
-        #    group_by(Time) %>%
-        #    slice(1) %>%
-        #   ungroup() %>%
-        #    select(Time, upper_bound, lower_bound)
-        # 
-        #    # Add second deriv
-        #  inflection <- rle(as.vector(fm1$derivative))
-        # 
-        #  ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE)) %>% # calc predicted values
-        #    dplyr::mutate(Time = ind$Time) %>%
-        #    left_join(ind) %>% # join with orig data set
-        #    dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci
-        #                  lower = pred.fit - pred.se.fit)
-        # 
-        # 
-        #  ind3<- ind2 %>% left_join(trend) %>%
-        #    mutate(cat2 = case_when(upper_bound == "upper" & lower_bound == "NA" ~ 1,
-        #                           upper_bound == "NA" & lower_bound == "lower" ~ 0,
-        #                           upper_bound == "NA" & lower_bound == "NA" ~ -1))
-        # 
-        #  ## Andy's loop-
-        #  catlabel <- 1
-        #  df<- ind3 %>% select(Time, cat2) %>%
-        #    mutate(change = cat2,
-        #            cat = NA)
-        #  for (irow in 1:nrow(df)) {
-        #    #print(irow)
-        #    if (irow == 1) {
-        #    df$cat[1] <- catlabel
-        #      next
-        #    }
-        # 
-        #    if ((df$change[irow]-df$change[irow-1]) == 0) {
-        #    } else {
-        #      catlabel=catlabel + 1
-        #    }
-        #    df$cat[irow] <- catlabel
-        #    #
-        #  }
-        # 
-        #  ind3<- ind3 %>% left_join(df) %>%
-        #    mutate(cat = as.character(cat),
-        #           cat2 = as.character(cat2))
-        # ### Plot
-        #  p2 <- ind3 %>%
-        #    ggplot2::ggplot()+
-        #    ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
-        #    ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-        #    ecodata::geom_gls(data = ind2, aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-        #    ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
-        #    scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-        #    ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
-        #    ggplot2::ylab(("Value")) +
-        #    ggplot2::xlab(paste("AIC = ", AICcmodavg::AICc(gam_norm)))+
-        #    ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
-        #    ggplot2::theme(axis.title.y = element_text(size = 10),
-        #                   axis.title.x = element_text(size = 15),
-        #                   legend.position = "none")+
-        #    ecodata::theme_ts()+
-        #    ecodata::theme_title()
-        #  p2
-
-        #########################################################################################################################
-   
+  
   
   ############## TIMESERIES PLOT ###################
    output$timeseries<- renderPlot({ 
-     print("before dat read")
+     
      dat <- dat()
-     print("after dat read")
-     class(dat)
+     
      shade.alpha <- 0.3
      shade.fill <- "lightgrey"
      lwd <- 1
@@ -565,10 +475,10 @@ function(input, output){
           ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
           ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
           ecodata::geom_gls(aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
-           ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+0.3, linetype = "dashed")+
-          # #ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
-          # #scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
-          # #ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
+          #ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+0.3, linetype = "dashed")+
+          ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
+          scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+           ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
            ggplot2::ylab(("Value")) +
            ggplot2::xlab(paste("Model = ", dat$choseMod))+
            ggplot2::ggtitle(paste(input$Indicator,"-",input$epu_abbr))+
@@ -584,23 +494,16 @@ function(input, output){
 
 
   output$tableout <- DT::renderDataTable(server = FALSE,{
-    # ind<- ind()
-    # 
-    # gam_norm<- mgcv::gam(Value ~ s(Time, k=input$knots), data = ind, na.action = na.omit, gamma = input$gamma) # calc gam
-    # 
-    # new.dat<-data.frame(Time = ind$Time, # newdata
-    #                     Value = ind$Value)
-    # 
-    # ind2<-  data.frame(pred = mgcv::predict.gam(gam_norm, new.dat, se.fit = TRUE )) %>% # calc predicted values
-    #   dplyr::mutate(Time = ind$Time) %>%
-    #   right_join(ind) %>% # join with orig data set
-    #   dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci
-    #                 lower = pred.fit - pred.se.fit)
-    # 
-    # DT::datatable(ind2, extensions=c("Buttons",'Scroller'),
-    #               options = list(dom = 'Bfrtip',
-    #                              buttons = c( 'csv', 
-    #                                          'excel')))#,
+     dat<- dat()
+     
+     dat<- dat %>% dplyr::select("Time","Var","EPU","Units","Value",
+                                 "pred.fit", "pred.se.fit","choseMod", 
+                                 "upper", "lower")
+    
+    DT::datatable(dat, extensions=c("Buttons",'Scroller'),
+                  options = list(dom = 'Bfrtip',
+                                 buttons = c( 'csv',
+                                             'excel')))#,
 
     })
 

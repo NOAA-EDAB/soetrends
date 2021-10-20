@@ -376,9 +376,9 @@ shinyServer(
           left_join(ind) %>% # join with orig data set
           dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                         lower = pred.fit - pred.se.fit, 
-                        choseMod = c("Linear"), 
-                        upper_bound = c("upper"),
-                        lower_bound = c("lower")) %>% 
+                        choseMod = c("Linear"),
+                        upper_bound = ifelse(linear$coefficients[2] > 0, "upper", "NA"),
+                        lower_bound = ifelse(linear$coefficients[2] < 0, "lower", "NA")) %>% 
           dplyr::mutate(cat2 = case_when(upper_bound == "upper" ~ 0,
                                          lower_bound == "lower" ~ 1,
                                          upper_bound == "NA" & lower_bound == "NA" ~ -1))
@@ -409,8 +409,8 @@ shinyServer(
           dplyr::mutate(upper = pred.fit + pred.se.fit, # calc upper and lower ci 
                         lower = pred.fit - pred.se.fit, 
                         choseMod = c("LMAC"), 
-                        upper_bound = c("upper"),
-                        lower_bound = c("lower")) %>% 
+                        upper_bound = ifelse(lmac$lme$coefficients$fixed[2] > 0, "upper", "NA"),
+                        lower_bound = ifelse(lmac$lme$coefficients$fixed[2] < 0, "lower", "NA")) %>% 
           dplyr::mutate(cat2 = case_when(upper_bound == "upper" ~ 0,
                                          lower_bound == "lower" ~ 1,
                                          upper_bound == "NA" & lower_bound == "NA" ~ -1))
@@ -439,7 +439,7 @@ shinyServer(
       dat<- dat%>% left_join(df) %>%
         mutate(cat = as.character(cat),
                cat2 = as.character(cat2))
-      
+      #write.csv(dat, "lsst.csv")
     })
     
     
@@ -471,10 +471,10 @@ shinyServer(
       
       ### New plot
       p3<- dat %>% 
-        ggplot2::ggplot()+
-        ggplot2::geom_line(aes(x = Time, y = Value), size = lwd) +
-        ggplot2::geom_point(aes(x = Time, y = Value), size = pcex) +
-        ecodata::geom_gls(aes(x = Time, y = Value), size = lwd+1, alpha = 0.5)+
+        ggplot2::ggplot(aes(x = Time, y = Value))+
+        ggplot2::geom_line( size = lwd) +
+        ggplot2::geom_point( size = pcex) +
+        ecodata::geom_gls(size = lwd+1, alpha = 0.5)+
         #ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+0.3, linetype = "dashed")+
         ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
         scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+

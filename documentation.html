@@ -366,21 +366,23 @@ pre code {
 
 <div id="trend-analysis-documentation" class="section level1">
 <h1>Trend Analysis Documentation</h1>
-<div id="click-here-for-mid-atlantic-indicators-gam-summary-statistics" class="section level2">
-<h2><strong>CLICK HERE for <a href="https://noaa-edab.github.io/soetrends/stat_summary_MA">Mid-Atlantic indicators GAM summary statistics</a></strong></h2>
-</div>
-<div id="click-here-for-new-england-indicators-gam-summary-statistics" class="section level2">
-<h2><strong>CLICK HERE for <a href="https://noaa-edab.github.io/soetrends/stat_summary_NE">New England indicators GAM summary statistics</a></strong></h2>
 <p>This shiny application was developed to explore State of the Ecosystem indicator trend analysis. If you have questions not answered below please contact <a href="mailto:Kimberly.bastille@noaa.gov" class="email">Kimberly.bastille@noaa.gov</a>.</p>
-</div>
 <div id="data-sources" class="section level2">
 <h2>Data sources</h2>
 <p>The datasets available in this shiny app are ecosystem indicators found in the State of the Ecosystem reports and are available in our <a href="https://github.com/NOAA-EDAB/ecodata">ecodata</a> R package. More detailed descriptions of the indicator methodology is available in the <a href="https://noaa-edab.github.io/tech-doc/">Technical Documentation</a> for these reports.</p>
 </div>
 <div id="data-analysis" class="section level2">
 <h2>Data analysis</h2>
-<p>This app uses the model methodology from <a href="https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/ecs2.1860">Samhouri et al 2017</a>, code adapted from <a href="https://github.com/slarge/GAM-thresholds/blob/master/gamThresholds_final_KA_2016.10.19.R">slarge/GAM-thresholds</a>. This allows for comparing linear models (Linear), Generalized addative models (GAM), linear models with autocorrelation (LMAC), and Generalized addative mixed models (GAMM). The shiny app follows the model selction criteria below.</p>
-<p>Add decision flowchart…</p>
+<p>This app uses the model methodology from <a href="https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/ecs2.1860">Samhouri et al. 2017</a>, code adapted from <a href="https://github.com/slarge/GAM-thresholds/blob/master/gamThresholds_final_KA_2016.10.19.R">slarge/GAM-thresholds</a>. This allows for comparing linear models (Linear), Generalized addative models (GAM), linear models with autocorrelation (LMAC), and Generalized addative mixed models (GAMM). The shiny app follows the model selction criteria below.</p>
+<pre><code>  ### Identify &quot;best model&quot;#####
+  ### 1a) Is p.ac &lt;= 0.05? If yes, keep and evaluate selection criteria between GAMM and LMAC as best model.If no, move to step 2.
+  ### 1b) Is GAMM edf &gt; 2.0 for GAMM? If yes, keep. If no, LMAC is best.
+  ### 1c) Is delta.AIC &gt; 2.0 between GAMM and LMAC. If yes, GAMM is best. If no, LMAC is most parsimonious.
+  ### 2a) If p.ac &gt; 0.05, then revert to GAM model and ask if edf of GAM &gt; 2.0? If yes, keep GAM. If no, linear model is best model.
+  ### 2b) Is GCV minimized in GAM compared to Linear model? If delta.GCV.gam.lm is negative then keep GAM. If delta.GCV.gam.lm is positive then linear model is best.
+  ### 2c) Is deltaAIC &gt; 2.0 for GAM? If yes, then GAM is best model. If no, then linear model is best model.</code></pre>
+<p><strong>CLICK HERE for <a href="https://noaa-edab.github.io/soetrends/stat_summary_MA">Mid-Atlantic indicators GAM summary statistics</a></strong></p>
+<p><strong>CLICK HERE for <a href="https://noaa-edab.github.io/soetrends/stat_summary_NE">New England indicators GAM summary statistics</a></strong></p>
 </div>
 <div id="options" class="section level2">
 <h2>Options</h2>

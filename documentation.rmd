@@ -1,3 +1,10 @@
+---
+output: html_document
+resource_files:
+- ui.R
+- soetrends.Rproj
+- server.R
+---
 # Trend Analysis Documentation
 
 

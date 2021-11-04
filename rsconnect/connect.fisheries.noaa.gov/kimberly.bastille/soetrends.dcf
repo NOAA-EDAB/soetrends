@@ -1,0 +1,14 @@
+name: soetrends
+title: soetrends
+username: kimberly.bastille
+account: kimberly.bastille
+server: connect.fisheries.noaa.gov
+hostUrl: https://connect.fisheries.noaa.gov/__api__
+appId: 65
+bundleId: 200
+url: https://connect.fisheries.noaa.gov/content/24ac5977-ec9f-4c32-ab8d-045cdbc526e6/
+when: 1636034543.84768
+lastSyncTime: 1636034543.84768
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: all.Summary.csv|all.Summary.rec.harvest.csv|docs/stat_summary.md|docs/stat_summary_MA.html|docs/stat_summary_MA.rmd|docs/stat_summary_NE.html|docs/stat_summary_NE.Rmd|figure/pressure-1.png|summary_stats.R

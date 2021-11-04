@@ -1,12 +1,13 @@
 shinyServer(
   
   function(input, output){
-    
+    #remotes::install_github("noaa-edab/ecodata",build_vignettes=TRUE)
     library(tidyverse)
     library(ecodata)
     library(ggplot2)
     library(dplyr)
     library(tidyr)
+    library(ggplot2)
     library(ecodata)
     library(here)
     library(kableExtra)

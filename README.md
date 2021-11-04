@@ -4,7 +4,7 @@
 Shiny app developed to facilitate time series analaysis for State of the Ecosystem data. 
 
 
-
+App available on fisheries connect - https://connect.fisheries.noaa.gov/content/24ac5977-ec9f-4c32-ab8d-045cdbc526e6/. 
 
 
 

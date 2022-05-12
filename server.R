@@ -144,7 +144,7 @@ shinyServer(
         ind <- ecodata::long_term_sst %>% 
           dplyr::filter(EPU == input$epu_abbr)
       } else {
-        ind <- message("No Data")
+        message("No Data")
       }
       
     })
@@ -166,6 +166,8 @@ shinyServer(
       rand <- data.frame(rep(1,length(ind$Value))) %>%
         dplyr::rename("rand" = "rep.1..length.ind.Value..")
       ind<- ind %>% cbind(rand)
+
+
       #ts.length <- ind$Time
       #print(rand)
       #print(ts.length)
@@ -178,8 +180,15 @@ shinyServer(
       #### the model and provide selection criteria (i.e. edf, GCV and AIC scores from GAM and Linear model (linear) to compare)
       
       gam1  <- mgcv::gam(Value ~ s(Time, bs= "tp",k = ks), optimMmethod="GCV.Cp",se = T, data = ind)
-      #print(gam1)
+      shiny::validate(
+        need(ind(), "oops")
+      )
       linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
+      shiny::validate(
+        need(ind(), "oops")
+      )
+      
+      
       dev.resid <- data.frame(stats::residuals(gam1,type='deviance')) %>% 
         dplyr::rename("dev.resid" = "stats..residuals.gam1..type....deviance..")
       ind<- ind %>% cbind(dev.resid)
@@ -230,7 +239,6 @@ shinyServer(
       # Calculate difference in deviance and AIC between GAMM and LMAC ("dev.diff.gamm.lmac" and "delta.AIC.gamm.lmac" respectively below).
       dev.diff.gamm.lmac <- gamm.dev.expl-lmac.dev.expl
       delta.AIC.gamm.lmac <- summary(gamm$lme)$AIC-summary(lmac$lme)$AIC   #A negative value means the GAMM is a better model than the linear model with temporal autocorrelation
-      
       
       # Pull out relevant model outputs:
       
@@ -465,8 +473,8 @@ shinyServer(
       letter_size <- 4
       feeding.guilds1<- c("Piscivore","Planktivore","Benthivore","Benthos")
       feeding.guilds <- c("Apex Predator","Piscivore","Planktivore","Benthivore","Benthos")
-      x.shade.min <- 2010
-      x.shade.max <- 2020
+      x.shade.min <- 2011
+      x.shade.max <- 2021
       
       
       
@@ -489,7 +497,9 @@ shinyServer(
         ecodata::theme_ts()+
         ecodata::theme_title()
       
-      p3
+      p3 
+     
+     
     })
     
     

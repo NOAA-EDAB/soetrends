@@ -8,10 +8,10 @@ resource_files:
 # Trend Analysis Documentation
 
 
-This shiny application was developed to explore State of the Ecosystem indicator trend analysis. If you have questions not answered below please contact Kimberly.bastille@noaa.gov.
+This shiny application was developed to explore State of the Ecosystem indicator trend analysis. If you have questions not answered below, please contact Kimberly.bastille@noaa.gov.
 
 ## Data sources
-The datasets available in this shiny app are ecosystem indicators found in the State of the Ecosystem reports and are available in our [ecodata](https://github.com/NOAA-EDAB/ecodata) R package. More detailed descriptions of the indicator methodology is available in the [Technical Documentation](https://noaa-edab.github.io/tech-doc/) for these reports. 
+The datasets available in this shiny app are fisheries and ecosystem indicators found in the State of the Ecosystem reports and are available in our [ecodata](https://github.com/NOAA-EDAB/ecodata) R package. More detailed descriptions of the indicator methodology is available in the [Technical Documentation](https://noaa-edab.github.io/tech-doc/) for these reports. 
 
 ## Data analysis
 
@@ -34,7 +34,7 @@ This app uses the model methodology from [Samhouri et al. 2017](https://esajourn
 ## Options
 **Choose Region/EPU**: The options in this section should be chosen based on area of interest. Please note that not all indicators are available at all scales. For example, some human dimension indictaors are reported at the regional scale while environmental indicators are available at the EPU level. 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
 knitr::include_graphics(here::here("images/EPU_Designations_Map.jpg"))
 ```
 

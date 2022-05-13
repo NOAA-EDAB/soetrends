@@ -180,14 +180,8 @@ shinyServer(
       #### the model and provide selection criteria (i.e. edf, GCV and AIC scores from GAM and Linear model (linear) to compare)
       
       gam1  <- mgcv::gam(Value ~ s(Time, bs= "tp",k = ks), optimMmethod="GCV.Cp",se = T, data = ind)
-      shiny::validate(
-        need(ind(), "oops")
-      )
-      linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
-      shiny::validate(
-        need(ind(), "oops")
-      )
       
+      linear <- mgcv::gam(Value ~ Time, method = "GCV.Cp", se = T, data = ind)
       
       dev.resid <- data.frame(stats::residuals(gam1,type='deviance')) %>% 
         dplyr::rename("dev.resid" = "stats..residuals.gam1..type....deviance..")
@@ -502,6 +496,9 @@ shinyServer(
      
     })
     
+    output$summarytable <- DT::renderDataTable(server = FALSE, {
+      data <- data.frame(c("model", "value"))
+    })
     
     
     output$tableout <- DT::renderDataTable(server = FALSE,{

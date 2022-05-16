@@ -144,15 +144,18 @@ shinyServer(
         ind <- ecodata::long_term_sst %>% 
           dplyr::filter(EPU == input$epu_abbr)
       } else {
-        message("No Data")
+        
       }
-      
+
     })
     
     
     ##################### RUN MODEL AND MODEL SELECTION ###########
     dat<- reactive({
       ind<- ind()
+      if (length(ind$Value)<1){
+        stop(safeError("The indicator selected does not exist at the regional/epu scale selected. Please choose different Region/EPU."))
+      }
       #print(ind)
       
       sp.len <- 200 # Spline length
@@ -496,8 +499,9 @@ shinyServer(
      
     })
     
-    output$summarytable <- DT::renderDataTable(server = FALSE, {
-      data <- data.frame(c("model", "value"))
+    output$summarytable <- renderTable(server = FALSE, {
+      print(allSummary)
+        
     })
     
     

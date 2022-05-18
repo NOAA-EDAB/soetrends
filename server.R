@@ -499,7 +499,7 @@ shinyServer(
      
     })
     
-    output$summarytable <- DT::renderDataTable(server = FALSE,{
+    output$summarytable <- renderTable({
     # output$summarytable<- DT::{
        ind<- ind()
     if (length(ind$Value)<1){
@@ -698,20 +698,25 @@ shinyServer(
     allSummary<- data.frame()
     allSummary <- rbind(allSummary, summary.gamm, summary.lmac, summary.gam1,
                         summary.linear)
-    summarytable <-allSummary #%>%
+    summarytable <- allSummary #%>%
      # knitr::kable() %>%
     #  kableExtra::row_spec(which(allSummary$best.model == "yes"), bold = T, color = "white", background = "blue")
-    DT::datatable(summarytable) %>% 
-      DT::formatStyle('best.model', target= 'row', 
-                  backgroundColor = DT::styleEqual(c("yes", "no"), c('yellow', 'white')))
-
+    # DT::datatable(summarytable) %>% 
+    #   DT::formatStyle('best.model', target= 'row', 
+    #               backgroundColor = DT::styleEqual(c("yes", "no"), c('yellow', 'white')))
+    summarytable
     })
     
-    
-    output$descriptionmarkdown <- renderUI({
+    observeEvent(){
+      
+      dat<- dat()
+      input$model <- unique(dat$choseMod)
+      
+      output$descriptionmarkdown <- renderUI({
+      
       HTML(markdown::markdownToHTML(knit('descriptionmarkdown.rmd', quiet = TRUE)))
-    
-    })
+      })
+    }
       
     output$tableout <- DT::renderDataTable(server = FALSE,{
       dat<- dat()

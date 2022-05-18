@@ -52,7 +52,7 @@ shinyUI(
       # Output: Histogram ----
       tabPanel("Plot/Summary", 
                plotOutput(outputId = "timeseries"),
-               DT::dataTableOutput("summarytable"), 
+               tableOutput("summarytable"), 
                htmlOutput("descriptionmarkdown")),
                #plotOutput(outputId = "residuals")),
       tabPanel("Table",

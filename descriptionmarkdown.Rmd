@@ -4,13 +4,11 @@ resource_files:
 - ui.R
 - soetrends.Rproj
 - server.R
+params:
+  model: NULL
 ---
-GAMM - Generalized Additive Mixed Model
 
-GAM - Generalized Additive Model
+<p style = "<color:red"> `r params$model` </p>
 
-LMAC - Linear Model with Autocorrelation
-
-Linear - Linear Model
 
 Further model and app documentation available at the 'Documentation' tab. 

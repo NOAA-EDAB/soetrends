@@ -707,16 +707,24 @@ shinyServer(
     summarytable
     })
     
-    observeEvent(){
+    #observeEvent(input$descriptionmarkdown,{
       
-      dat<- dat()
-      input$model <- unique(dat$choseMod)
       
+      #dat<- dat()
+      #input$model <- unique(dat$choseMod)
+   
       output$descriptionmarkdown <- renderUI({
-      
-      HTML(markdown::markdownToHTML(knit('descriptionmarkdown.rmd', quiet = TRUE)))
+        dat<- dat()
+        model <- unique(dat$choseMod)
+        includeHTML(
+          rmarkdown::render(input = "descriptionmarkdown.Rmd", 
+                            params = model)
+        )
+        
+        
+      #HTML(markdown::markdownToHTML(knit('descriptionmarkdown.rmd', quiet = TRUE)))
       })
-    }
+    #})
       
     output$tableout <- DT::renderDataTable(server = FALSE,{
       dat<- dat()

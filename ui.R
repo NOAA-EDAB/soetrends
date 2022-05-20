@@ -15,21 +15,6 @@ shinyUI(
                               "Gulf of Maine" = "GOM",
                               "Shelfwide"="All"),
                   selected = "All",multiple = F),
-    #   conditionalPanel( # NE #
-    #     condition = "input.epu_abbr == 'NE'", 
-    #     selectInput(inputId="Indicator",label="Choose SOE Indicator",
-    #                 choices = c(#"Revenue_Managed"="Revenue_Managed",
-    #                   #"Landings_Managed"="Landings_Managed",
-    #                   "Recreational_Seafood_Harvest" = "Recreational_Seafood_Harvest",
-    #                   "Recreational_Effort" = "Recreational_Effort",
-    #                   "Recreational_Catch_Diversity" = "Recreational_Catch_Diversity"),
-    #                 #"Zooplankton_Diversity" = "Zooplankton_Diversity",
-    #                 #"Bottom_Temp" = "Bottom_Temp",
-    #                 #"Heatwave_Cumulative_Intensity" = "Heatwave_Cumulative_Intensity",
-    #                 #"Heatwave_Maximum_Intensity" = "Heatwave_Maximum_Intensity"),
-    #                 #selected = "Recreational_Seafood_Harvest",multiple = F),
-    #                 selected = "Recreational_Seafood_Harvest" ,multiple = FALSE),
-    #   ), 
 
       selectInput(inputId="Indicator",label="Choose SOE Indicator",
                   choices = c("Revenue_Managed"="Revenue_Managed",
@@ -49,20 +34,15 @@ shinyUI(
     mainPanel(
       tabsetPanel(type = "tabs",
 
-      # Output: Histogram ----
       tabPanel("Plot/Summary", 
                plotOutput(outputId = "timeseries"),
                tableOutput("summarytable"), 
                htmlOutput("descriptionmarkdown")),
-               #plotOutput(outputId = "residuals")),
       tabPanel("Table",
                DT::dataTableOutput("tableout")),#, 
                #fluidPage(downloadButton('downloadData', "Download data"))), # in a tabitem)), 
       tabPanel("Documentation",
-               htmlOutput("markdown"))#,
-      #tabPanel("Summary Stats",
-       #        htmlOutput("markdown"))
-
+               htmlOutput("markdown"))
     )
     )
   )

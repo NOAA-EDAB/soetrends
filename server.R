@@ -715,11 +715,11 @@ shinyServer(
    
       output$descriptionmarkdown <- renderUI({
         dat<- dat()
-        model <- unique(dat$choseMod)
+        selectmodel <- unique(dat$choseMod)
         includeHTML(
           rmarkdown::render(input = "descriptionmarkdown.Rmd", 
-                            params = model)
-        )
+                            params = list(model = selectmodel)
+        ))
         
         
       #HTML(markdown::markdownToHTML(knit('descriptionmarkdown.rmd', quiet = TRUE)))

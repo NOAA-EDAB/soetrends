@@ -8,7 +8,25 @@ params:
   model: NULL
 ---
 
-<p style = "<color:red"> `r params$model` </p>
 
 
-Further model and app documentation available at the 'Documentation' tab. 
+
+
+
+## `r ifelse(params$model == "LMAC", print(**LMAC**) , print("LMAC"))`
+
+Linear model with autocorrelation
+
+## `r ifelse(params$model == "Linear", print("**Linear**"), print("Linear"))`
+
+Linear model
+
+## `r ifelse(params$model == "GAM", print("**GAM**"), print("GAM"))`
+
+Generalized additive model
+
+## `r ifelse(params$model == "GAMM", print("**GAMM**"), print("GAMM"))`
+
+Generalized additive mixed model
+
+*Further model and app documentation available at the 'Documentation' tab.* 

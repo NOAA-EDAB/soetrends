@@ -36,7 +36,6 @@ shinyUI(
 
       tabPanel("Plot/Summary", 
                plotOutput(outputId = "timeseries"),
-               tableOutput("summarytable"), 
                htmlOutput("descriptionmarkdown")),
       tabPanel("Table",
                DT::dataTableOutput("tableout")),#, 

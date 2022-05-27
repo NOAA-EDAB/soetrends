@@ -154,6 +154,7 @@ shinyServer(
     dat<- reactive({
       ind<- ind()
       if (length(ind$Value)<1){
+        #print("ops")
         stop(safeError("The indicator selected does not exist at the Regional/EPU scale selected. Please choose different Region/EPU."))
       }
       #print(ind)

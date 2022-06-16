@@ -13,8 +13,8 @@ shinyUI(
                               "New England"="NE",
                               "Georges Bank" = "GB",
                               "Gulf of Maine" = "GOM",
-                              "Shelfwide"="All"),
-                  selected = "All",multiple = F),
+                              "Shelfwide"="ALL"),
+                  selected = "ALL",multiple = F),
 
       selectInput(inputId="Indicator",label="Choose SOE Indicator",
                   choices = c("Revenue_Managed"="Revenue_Managed",

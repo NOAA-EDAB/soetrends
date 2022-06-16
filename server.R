@@ -35,19 +35,21 @@ shinyServer(
     x.shade.max <- 2021
     
      
-    
-    ind <- reactive({ 
-      ind_df<- read.csv(file.path(here::here("indicator_df.csv")))
-      ind <- ind_df %>% 
-        dplyr::filter(ind == input$Indicator, 
-                      epu_abbr == input$epu_abbr)
-      })
+   
+     ind <- reactive({ 
+       ind_df<- read.csv(file.path(here::here("indicator_df.csv")))
+       ind <- ind_df %>% 
+         dplyr::filter(ind == input$Indicator, 
+                       epu_abbr == input$epu_abbr)%>% 
+         dplyr::mutate(Time = as.numeric(Time), 
+                       cat2 = as.character(cat2))
+       })
     
     ############## TIMESERIES PLOT ###################
     output$timeseries<- renderPlot({ 
       
       dat <- ind()
-      
+
       ### New plot
       p3<- dat %>% 
         dplyr::mutate(Time = as.numeric(Time)) %>% 
@@ -57,7 +59,7 @@ shinyServer(
         ecodata::geom_gls(size = lwd+1, alpha = 0.5)+
         #ggplot2::geom_line(aes(x = Time, y = pred.fit), size = lwd+0.3, linetype = "dashed")+
         ggplot2::geom_line(aes(x = Time, y = pred.fit, color = cat2, group = cat), size = lwd+0.3, linetype = "dashed")+
-        scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
+        ggplot2::scale_color_manual(values = c("1" = "purple", "0" = "orange", "-1" = "gray"))+#, "NA" = NA))+
         ggplot2::geom_ribbon(aes(ymin = lower, ymax = upper, x = Time, y = Value), fill = "gray", alpha = 0.3)+
         ggplot2::ylab(("Value")) +
         ggplot2::xlab(paste("Model = ", dat$choseMod))+
@@ -74,17 +76,18 @@ shinyServer(
     
     output$descriptionmarkdown <- renderUI({
       dat<- ind()
+
       selectmodel <- unique(dat$choseMod)
       includeHTML(
         rmarkdown::render(input = "descriptionmarkdown.Rmd", 
                           params = list(model = selectmodel)
-        ))#HTML(markdown::markdownToHTML(knit('descriptionmarkdown.rmd', quiet = TRUE)))
+        ))
     })
     
     output$tableout <- DT::renderDataTable(server = FALSE,{
       dat<- ind()
-      
-      dat<- dat %>% dplyr::select("Time","Var","EPU","Units","Value",
+
+      dat<- dat %>% dplyr::select("Time","ind","epu_abbr","Value",
                                   "pred.fit", "pred.se.fit","choseMod", 
                                   "upper", "lower")
       

@@ -28,6 +28,10 @@ shinyUI(
                               "Heatwave_Maximum_Intensity" = "Heatwave_Maximum_Intensity",
                               "LTSST"="LTSST"),
                   selected = "LTSST",multiple = F),
+      h5("Selected model found below plot (Linear - Linear model, 
+         LMAC - Linear model with autocorrelation,
+         GAM - Generalized additive model, 
+         GAMM - Generalized additive mixed model) ")
     ),
 
     # Main panel for displaying outputs ----
